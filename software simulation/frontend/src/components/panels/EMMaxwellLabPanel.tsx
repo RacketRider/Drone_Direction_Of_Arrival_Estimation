@@ -77,7 +77,7 @@ export function EMMaxwellLabPanel() {
   const handleRun2DFDTD = async () => {
     setFdtdLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/propagation-study", {
+      const res = await fetch("/api/propagation-study", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domain_size_m: 2.2, steps: 220 })
@@ -96,7 +96,7 @@ export function EMMaxwellLabPanel() {
   const handleRun3DFDTD = async () => {
     setFdtdLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/propagation-study-3d", {
+      const res = await fetch("/api/propagation-study-3d", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ size_m: 0.40, steps: 50 })
@@ -115,7 +115,7 @@ export function EMMaxwellLabPanel() {
   const handleRunMultiRadar = async () => {
     setRadarLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/multiradar", {
+      const res = await fetch("/api/multiradar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({})
