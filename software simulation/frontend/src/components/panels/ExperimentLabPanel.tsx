@@ -48,7 +48,7 @@ export function ExperimentLabPanel() {
 
   // Fetch presets list and paper benchmarks
   useEffect(() => {
-    fetch("http://localhost:8000/api/experiments/presets")
+    fetch("/api/experiments/presets")
       .then((res) => res.json())
       .then((data) => {
         setPresets(data);
@@ -58,7 +58,7 @@ export function ExperimentLabPanel() {
         console.error("Failed to load experiment presets:", err);
       });
 
-    fetch("http://localhost:8000/api/experiments/paper-benchmarks")
+    fetch("/api/experiments/paper-benchmarks")
       .then((res) => res.json())
       .then((data: PaperBenchmarksData) => {
         setPaperData(data);
@@ -74,7 +74,7 @@ export function ExperimentLabPanel() {
     setReport(null);
 
     try {
-      const res = await fetch("http://localhost:8000/api/experiments/run", {
+      const res = await fetch("/api/experiments/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ preset_id: selectedPresetId, seed: 42 }),
@@ -125,7 +125,7 @@ export function ExperimentLabPanel() {
         ? { rows: report.results }
         : {};
 
-      const res = await fetch("http://localhost:8000/api/export.xlsx", {
+      const res = await fetch("/api/export.xlsx", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

@@ -8,6 +8,7 @@ node_modules/
 out/
 build/
 dist/
+*.tsbuildinfo
 
 # Python Cache & Testing
 __pycache__/
@@ -17,6 +18,7 @@ __pycache__/
 .coverage
 htmlcov/
 *.egg-info/
+*.tmp
 
 # LaTeX Auxiliary Files (Preserve main.pdf and figures)
 *.aux

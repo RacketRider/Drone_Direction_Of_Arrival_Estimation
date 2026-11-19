@@ -3,7 +3,19 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { TelemetryFrame, SignalDiagnosticsFrame } from "@/types/telemetry";
 
-export function useSimulationWebSocket(serverUrl: string = "ws://localhost:8000/ws/telemetry") {
+/**
+ * Dynamically resolves the WebSocket URL for local development or production.
+ * In production (HTTPS), automatically upgrades to wss:// and uses same-origin host.
+ */
+function getDefaultWsUrl(): string {
+  if (typeof window === "undefined") return "";
+  const isHttps = window.location.protocol === "https:";
+  const wsProtocol = isHttps ? "wss:" : "ws:";
+  const host = process.env.NEXT_PUBLIC_WS_HOST || window.location.host;
+  return `${wsProtocol}//${host}/ws/telemetry`;
+}
+
+export function useSimulationWebSocket(customServerUrl?: string) {
   const [telemetry, setTelemetry] = useState<TelemetryFrame | null>(null);
   const [diagnostics, setDiagnostics] = useState<SignalDiagnosticsFrame | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -14,7 +26,10 @@ export function useSimulationWebSocket(serverUrl: string = "ws://localhost:8000/
 
   const connect = useCallback(() => {
     try {
-      const ws = new WebSocket(serverUrl);
+      const targetUrl = customServerUrl || getDefaultWsUrl();
+      if (!targetUrl) return;
+
+      const ws = new WebSocket(targetUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -36,12 +51,12 @@ export function useSimulationWebSocket(serverUrl: string = "ws://localhost:8000/
       };
 
       ws.onerror = (evt) => {
-        setError("WebSocket connection failed. Is the Python backend running?");
+        setError("WebSocket connection failed. Ensure backend service is reachable.");
       };
 
       ws.onclose = () => {
         setIsConnected(false);
-        // Automatic reconnection every 2.0 seconds
+        // Automatic reconnection attempt every 2.0 seconds
         reconnectTimeoutRef.current = setTimeout(() => {
           connect();
         }, 2000);
@@ -49,7 +64,7 @@ export function useSimulationWebSocket(serverUrl: string = "ws://localhost:8000/
     } catch (err: any) {
       setError(err?.message || "Failed to establish WebSocket");
     }
-  }, [serverUrl]);
+  }, [customServerUrl]);
 
   useEffect(() => {
     connect();
@@ -73,4 +88,3 @@ export function useSimulationWebSocket(serverUrl: string = "ws://localhost:8000/
     sendCommand
   };
 }
-

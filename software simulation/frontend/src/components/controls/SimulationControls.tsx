@@ -103,7 +103,7 @@ export function SimulationControls({ telemetry, onCommand }: SimulationControlsP
           </button>
 
           <a
-            href="http://localhost:8000/api/export.xlsx"
+            href="/api/export.xlsx"
             download="ec261_uav_telemetry.xlsx"
             className="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 flex items-center transition-colors"
             title="Export Excel flight dataset"
