@@ -1,0 +1,2037 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Drone RF DoA Lab</title>
+<style>
+:root{
+  --bg:#f3f3ef; --panel:#ffffff; --panel2:#f8f8f5; --line:#deded6; --line2:#ecece6;
+  --text:#24282c; --muted:#6c7176; --accent:#1f6f8b; --accent2:#174f63; --warn:#b45309; --bad:#b42318; --good:#2f7d4f;
+  --c-direct:#d99a00; --c-obs:#c92a2a; --c-ground:#2f9e44; --c-spec:#e8590c; --c-second:#c2255c; --c-diff:#7048e8; --c-scat:#7d858c; --c-int:#a61e4d;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 10px}
+button:hover{border-color:#b9b9ae;background:#fbfbf8}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:var(--accent2)}
+button.small{padding:3px 8px;font-size:12px}
+select,input[type=number]{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 7px;background:#fff}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=checkbox]{accent-color:var(--accent)}
+header{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--line);background:#fff;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;margin-right:10px}
+.brand b{font-size:16px;letter-spacing:-.01em}
+.brand span{font-size:11px;color:var(--muted)}
+.hgroup{display:flex;align-items:center;gap:8px}
+.hgroup label{font-size:12px;color:var(--muted);white-space:nowrap}
+.hgroup select{width:auto}
+.hgroup input[type=number]{width:70px}
+.spacer{flex:1}
+.layout{display:grid;grid-template-columns:292px minmax(0,1fr) 372px;gap:12px;padding:12px;align-items:start}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line2);font-weight:600;font-size:12px;letter-spacing:.02em;text-transform:uppercase;color:#3d4247}
+.pb{padding:10px 12px}
+details.sec{border-bottom:1px solid var(--line2)}
+details.sec:last-child{border-bottom:0}
+details.sec>summary{cursor:pointer;list-style:none;padding:9px 12px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#3d4247;display:flex;justify-content:space-between}
+details.sec>summary::after{content:"+";color:var(--muted)}
+details.sec[open]>summary::after{content:"–"}
+details.sec>.body{padding:2px 12px 12px;display:flex;flex-direction:column;gap:9px}
+.f{display:flex;flex-direction:column;gap:3px}
+.f>label{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:#4a4f54}
+.v{color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums}
+.row{display:flex;gap:6px;align-items:center}
+.row>*{flex:1}
+.chk{display:flex;align-items:center;gap:7px;font-size:12px;color:#3d4247}
+.note{font-size:11px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.snrp{flex:1;padding:4px 0}
+.snrp.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.intItem{border:1px solid var(--line);border-radius:8px;padding:7px 8px;display:flex;flex-direction:column;gap:5px;background:var(--panel2)}
+.intItem .top{display:flex;align-items:center;gap:6px;justify-content:space-between;font-weight:600;font-size:12px}
+#viewWrap{position:relative;height:min(64vh,700px);min-height:440px;background:#e9eef0}
+#view{position:absolute;inset:0}
+#view canvas{display:block}
+.labels{position:absolute;top:0;left:0;pointer-events:none}
+.lbl{font:600 11px system-ui;padding:2px 6px;border-radius:5px;background:#ffffffe6;border:1px solid #c9c9bf;color:#222;white-space:nowrap}
+.lbl.rx{border-color:#1f6f8b;color:#174f63}
+.lbl.int{border-color:#a61e4d;color:#a61e4d}
+.lbl.dr{border-color:#d99a00;color:#7a5600}
+.lbl.ax{background:transparent;border:0;font-size:13px}
+.lbl.est{border-color:#7048e8;color:#5f3dc4}
+#hud{position:absolute;top:10px;left:10px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none;max-width:70%}
+.chip{background:#ffffffe8;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11px;font-variant-numeric:tabular-nums}
+#legend{position:absolute;bottom:10px;left:10px;display:flex;flex-wrap:wrap;gap:5px;max-width:calc(100% - 20px)}
+.lg{display:flex;align-items:center;gap:5px;background:#ffffffe8;border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;user-select:none}
+.lg.off{opacity:.35}
+.lg i{width:16px;height:3px;border-radius:2px;display:inline-block}
+#viewTools{position:absolute;top:10px;right:10px;display:flex;gap:6px}
+#viewTools button{background:#ffffffee;font-size:12px;padding:4px 9px}
+#hint{position:absolute;top:44px;right:10px;background:#ffffffe8;border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:11px;color:var(--muted);max-width:270px;pointer-events:none}
+#covLegend{position:absolute;right:10px;bottom:84px;background:#ffffffee;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:11px;display:none}
+#covLegend canvas{display:block;width:170px;height:10px;margin:4px 0}
+#errBanner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid var(--bad);color:var(--bad);padding:14px 16px;border-radius:8px;max-width:80%;display:none;z-index:9;white-space:pre-wrap;font-size:12px}
+.results{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.loc{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.kpi{background:var(--panel2);border:1px solid var(--line2);border-radius:8px;padding:7px 9px;min-width:0}
+.kpi .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.kpi .n{font-size:15px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .s{font-size:10.5px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600;text-align:right;padding:5px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:5px 6px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tr.sel td{background:#eef5f7}
+tbody tr{cursor:pointer}
+.tablewrap{overflow-x:auto}
+.badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10.5px;font-weight:700;letter-spacing:.03em}
+.b-LOS{background:#e6f4ea;color:#256b3f}.b-OLOS{background:#fff4dd;color:#8a5a00}.b-NLOS{background:#fde8e7;color:#a8261d}
+.charts{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:12px}
+.chartbox canvas{width:100%;height:210px;display:block}
+.chartbox .cap{font-size:11px;color:var(--muted);padding:0 12px 9px}
+#inspector .pb{display:flex;flex-direction:column;gap:10px}
+.ititle{font-size:15px;font-weight:650}
+.isub{font-size:12px;color:var(--muted)}
+.props{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.prop{background:var(--panel2);border:1px solid var(--line2);border-radius:7px;padding:5px 8px;min-width:0}
+.prop .k{font-size:10.5px;color:var(--muted)}
+.prop .n{font-size:13.5px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.subh{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#3d4247;border-top:1px solid var(--line2);padding-top:9px;display:flex;justify-content:space-between;align-items:center}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{flex:1;border:0;border-radius:0;padding:5px}
+.seg button.on{background:var(--accent);color:#fff}
+.budget{display:flex;height:16px;border-radius:5px;overflow:hidden;border:1px solid var(--line)}
+.budget div{height:100%}
+.blegend{display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--muted)}
+.blegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px;vertical-align:-1px}
+#fdtdCanvas,#fresnelCanvas{width:100%;display:block;border:1px solid var(--line);border-radius:7px;background:#fff}
+#fdtdCanvas{aspect-ratio:1/1}
+#fresnelCanvas{height:170px}
+.ptable td,.ptable th{padding:3px 4px;font-size:11px}
+.sw{display:inline-block;width:10px;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}
+.modal{position:fixed;inset:0;background:#0006;display:none;align-items:center;justify-content:center;z-index:20}
+.modal.on{display:flex}
+.modal .box{background:#fff;border-radius:10px;max-width:860px;width:calc(100% - 32px);max-height:86vh;overflow:auto;padding:18px 22px}
+.modal h2{margin:0 0 6px;font-size:18px}
+.modal h3{margin:16px 0 4px;font-size:14px}
+.modal p,.modal li{font-size:13px;color:#33383c}
+.modal code{background:#f2f2ee;padding:1px 4px;border-radius:4px;font-size:12px}
+@media(max-width:1380px){.layout{grid-template-columns:280px minmax(0,1fr)}#rightCol{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px}.charts{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.layout{grid-template-columns:1fr}#rightCol{grid-template-columns:1fr}.loc{grid-template-columns:repeat(3,minmax(0,1fr))}.charts{grid-template-columns:1fr}#viewWrap{height:460px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="rf_physics.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand"><b>Drone RF DoA Lab</b><span>3D propagation · switched-beam PV-ML direction finding · multi-receiver localisation</span></div>
+  <div class="hgroup"><label for="preset">Scenario</label>
+    <select id="preset">
+      <option value="mixed">Mixed forest edge</option>
+      <option value="open">Open field (line of sight)</option>
+      <option value="light">Light woodland</option>
+      <option value="dense">Dense forest, low-altitude drone</option>
+      <option value="rocky">Rocky outcrop</option>
+    </select></div>
+  <div class="hgroup"><label for="seed">Layout #</label><input id="seed" type="number" value="7" min="1" max="9999"><button id="rebuild" class="small">Rebuild</button></div>
+  <div class="spacer"></div>
+  <button id="play" class="primary">❚❚ Pause</button>
+  <button id="resetSim">↺ Reset</button>
+  <button id="exportXlsx">⇩ Excel</button>
+  <button id="exportCsv">⇩ CSV</button>
+  <button id="helpBtn">? Model notes</button>
+</header>
+
+<div class="layout">
+<!-- ============================== LEFT: controls ============================== -->
+<aside class="col">
+<div class="panel">
+  <details class="sec" open><summary>Terrain &amp; ground</summary><div class="body">
+    <div class="f"><label for="groundMat">Ground material</label>
+      <select id="groundMat"><option value="soil_dry">Dry soil / forest floor</option><option value="soil_moist">Moist loam soil</option><option value="soil_wet">Wet / saturated soil</option><option value="ground_rocky">Rocky / gravel ground</option></select></div>
+    <div class="f"><label for="groundRough">Surface roughness (rms height) <span class="v" id="groundRoughV">2.0 cm</span></label><input id="groundRough" type="range" min="0" max="10" step="0.5" value="2"></div>
+    <label class="chk"><input id="puddles" type="checkbox" checked> Puddles reflect as water (εr ≈ 77)</label>
+  </div></details>
+
+  <details class="sec" open><summary>Drone &amp; flight path</summary><div class="body">
+    <div class="f"><label for="flight">Flight path (deterministic)</label>
+      <select id="flight"><option value="orbit">Orbit the receiver network</option><option value="across">Fly across the network</option><option value="approach">Approach network centre</option><option value="figure8">Figure-eight over the centre</option><option value="transit">Low-altitude forest transit</option><option value="hover">Hover / manual (drag the drone)</option></select></div>
+    <div class="f"><label for="speed">Speed <span class="v" id="speedV">4 m/s</span></label><input id="speed" type="range" min="0" max="15" step="0.5" value="4"></div>
+    <div class="f"><label for="alt">Altitude <span class="v" id="altV">9 m</span></label><input id="alt" type="range" min="1.5" max="40" step="0.5" value="9"></div>
+    <div class="f"><label for="heading">Heading / start azimuth <span class="v" id="headingV">30°</span></label><input id="heading" type="range" min="0" max="359" value="30"></div>
+    <div class="f"><label for="orbitR">Orbit / pattern radius <span class="v" id="orbitRV">18 m</span></label><input id="orbitR" type="range" min="5" max="45" value="18"></div>
+    <div class="f"><label for="pol">Antenna polarisation (drone and receivers)</label><select id="pol"><option value="V">Vertical (vertical dipole)</option><option value="H">Horizontal</option></select></div>
+  </div></details>
+
+  <details class="sec" open><summary>Signal &amp; noise</summary><div class="body">
+    <div class="f"><label for="freq">Carrier frequency</label><select id="freq"><option value="433e6">433 MHz (telemetry)</option><option value="915e6">915 MHz (ISM)</option><option value="2.4e9" selected>2.4 GHz (control / Wi-Fi)</option><option value="5.8e9">5.8 GHz (video)</option></select></div>
+    <div class="f"><label for="snrMode">Transmit level set by</label><select id="snrMode"><option value="ref">Reference SNR (free space, 50 m)</option><option value="power">Transmit power (dBm)</option></select></div>
+    <div class="f" id="refSnrBox"><label for="refSnr">Reference SNR <span class="v" id="refSnrV">10 dB</span></label><input id="refSnr" type="range" min="-20" max="40" value="10">
+      <div class="row" style="margin-top:3px"><button class="snrp small" data-v="-10">−10 dB</button><button class="snrp small" data-v="0">0 dB</button><button class="snrp small on" data-v="10">+10 dB</button><button class="snrp small" data-v="20">+20 dB</button></div>
+      <div class="note">SNR an isotropic, co-polarised antenna would see 50 m from the drone in free space. Actual per-receiver SNR (results table) also includes distance, blockage and multipath.</div></div>
+    <div class="f" id="txBox" style="display:none"><label for="txDbm">Transmit power <span class="v" id="txDbmV">20 dBm</span></label><input id="txDbm" type="range" min="-40" max="30" value="20"></div>
+    <div class="grid2">
+      <div class="f"><label for="bw">Bandwidth <span class="v" id="bwV">10 MHz</span></label><input id="bw" type="range" min="1" max="40" value="10"></div>
+      <div class="f"><label for="nf">Noise figure <span class="v" id="nfV">6 dB</span></label><input id="nf" type="range" min="1" max="12" value="6"></div>
+    </div>
+    <div class="f"><label for="L">Samples per beam dwell (L) <span class="v" id="LV">64</span></label><input id="L" type="range" min="8" max="256" step="8" value="64"></div>
+  </div></details>
+
+  <details class="sec" open><summary>Receivers (switched-beam arrays)</summary><div class="body">
+    <div class="row"><button id="addRx" class="primary small">＋ Add receiver</button><button id="removeRx" class="small">− Remove last</button></div>
+    <div class="note" id="rxCount"></div>
+    <div class="f"><label for="nAnt">Directional antennas per receiver <span class="v" id="nAntV">6</span></label><input id="nAnt" type="range" min="4" max="12" value="6"></div>
+    <div class="f"><label for="mastH">Antenna mast height <span class="v" id="mastHV">3.0 m</span></label><input id="mastH" type="range" min="1" max="10" step="0.5" value="3"></div>
+    <label class="chk"><input id="useTracked" type="checkbox"> Localise with Kalman-tracked bearings</label>
+    <label class="chk"><input id="decor" type="checkbox" checked> Multipath phase changes between beam dwells (moving drone)</label>
+  </div></details>
+
+  <details class="sec" open><summary>Other transmitters (interference)</summary><div class="body">
+    <div class="row"><button id="addWifi" class="small">＋ Wi-Fi AP</button><button id="addCtrl" class="small">＋ Controller</button><button id="addDrone2" class="small">＋ 2nd drone</button></div>
+    <div id="intList" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div class="note">Independent sources. They are not multipath copies of the drone signal: they add power to the beams, so the results show SIR and SINR separately from SNR.</div>
+  </div></details>
+
+  <details class="sec" open><summary>Propagation mechanisms</summary><div class="body">
+    <label class="chk"><input id="en-direct" type="checkbox" checked> Direct path</label>
+    <label class="chk"><input id="en-penetration" type="checkbox" checked> Penetration through objects (off = opaque)</label>
+    <label class="chk"><input id="en-ground" type="checkbox" checked> Ground reflection (Fresnel)</label>
+    <label class="chk"><input id="en-specular" type="checkbox" checked> Specular reflection on rock / trunk facets</label>
+    <label class="chk"><input id="en-second" type="checkbox" checked> 2nd order (ground ↔ facet)</label>
+    <label class="chk"><input id="en-diffraction" type="checkbox" checked> Knife-edge diffraction</label>
+    <label class="chk"><input id="en-diffuse" type="checkbox" checked> Diffuse scattering</label>
+    <div class="f"><label for="scatterS">Scattering coefficient S <span class="v" id="scatterSV">0.35</span></label><input id="scatterS" type="range" min="0" max="0.8" step="0.05" value="0.35"></div>
+  </div></details>
+
+  <details class="sec"><summary>Display</summary><div class="body">
+    <label class="chk"><input id="showAll" type="checkbox"> Draw paths for all receivers (otherwise the selected one)</label>
+    <div class="f"><label for="minRel">Hide paths weaker than <span class="v" id="minRelV">−40 dB</span></label><input id="minRel" type="range" min="10" max="70" step="5" value="40"></div>
+    <label class="chk"><input id="showParticles" type="checkbox" checked> Animated energy packets on rays</label>
+    <label class="chk"><input id="showWave" type="checkbox" checked> Expanding wavefronts</label>
+    <label class="chk"><input id="showRose" type="checkbox" checked> Measured beam-power rose on receivers</label>
+    <label class="chk"><input id="showLabels" type="checkbox" checked> Labels</label>
+    <div class="subh" style="border:0;padding:4px 0 0">Coverage map</div>
+    <div class="f"><label for="covH">Slice height <span class="v" id="covHV">3.0 m</span></label><input id="covH" type="range" min="0.5" max="20" step="0.5" value="3"></div>
+    <div class="row"><button id="covRun" class="small primary">Compute map</button><button id="covClear" class="small">Clear</button></div>
+    <div class="note" id="covStatus">Coherent ray-optics field (direct + ground + penetration + diffraction) on a horizontal slice. This is not a full-wave solution.</div>
+  </div></details>
+</div>
+</aside>
+
+<!-- ============================== CENTRE: 3D + results ============================== -->
+<main class="col">
+  <div class="panel">
+    <div id="viewWrap">
+      <div id="view"></div>
+      <div id="hud"></div>
+      <div id="viewTools"><button id="zoomSel" title="Fly the camera to the selected object">⌖ Zoom to selection</button><button id="overview" title="Back to the overview camera">⤢ Overview</button><button id="hideHint" title="Hide the help text">?</button></div>
+      <div id="hint">Click a <b>tree, rock, puddle or the ground</b> to see how the drone's waves reflect, refract and scatter on it. Drag the drone, receivers, transmitters, rocks and trees to move them. Drag empty space to orbit, scroll to zoom. <b>Double-click</b> an object to fly to it.</div>
+      <div id="legend"></div>
+      <div id="covLegend"><div id="covTitle">Received power</div><canvas id="covBar" width="170" height="10"></canvas><div class="row" style="justify-content:space-between"><span id="covMin"></span><span id="covMax"></span></div></div>
+      <div id="errBanner"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><span>Multi-receiver localisation</span><span class="note" style="text-transform:none;letter-spacing:0" id="locNote"></span></div>
+    <div class="pb"><div class="loc" id="locCard"></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><span>Per-receiver direction finding (PV-ML)</span><span class="note" style="text-transform:none;letter-spacing:0">Click a row to select a receiver</span></div>
+    <div class="tablewrap"><table id="rxTable"><thead><tr>
+      <th>Rx</th><th>Link</th><th>True az</th><th>PV-ML</th><th>Tracked</th><th>Error</th><th>σ est</th><th>SNR</th><th>SIR</th><th>SINR</th><th>Paths</th><th>Strongest path</th><th>K</th><th>τ rms</th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="charts">
+    <div class="panel chartbox"><div class="ph"><span>Beam powers &amp; DoA spectra · <span id="chartRx">R1</span></span></div><canvas id="beamChart"></canvas><div class="cap">Bars show measured beam power (dB above noise, right axis). Lines show the PV-ML likelihood, Bartlett and MUSIC spectra (left axis; Bartlett and MUSIC run on a coherent circular array for reference). Ticks along the top mark the arrival azimuth of each propagation path.</div></div>
+    <div class="panel chartbox"><div class="ph"><span>Azimuth history</span></div><canvas id="histChart"></canvas><div class="cap">True bearing compared with the raw PV-ML estimate and the Kalman-tracked bearing.</div></div>
+    <div class="panel chartbox"><div class="ph"><span>Power-delay profile</span></div><canvas id="pdpChart"></canvas><div class="cap">Every path from the ray tracer at its delay and received power, coloured by mechanism.</div></div>
+  </div>
+</main>
+
+<!-- ============================== RIGHT: inspector ============================== -->
+<aside class="col" id="rightCol">
+  <div class="panel" id="inspector"><div class="ph"><span>Inspector</span><span id="inspTag" class="note" style="text-transform:none;letter-spacing:0"></span></div><div class="pb" id="inspBody"></div></div>
+</aside>
+</div>
+
+<div class="modal" id="help"><div class="box">
+  <h2>Model notes</h2>
+  <p>This page simulates RF direction finding of a drone in a 3D outdoor scene. Each receiver estimates a <b>bearing</b> only. Two or more separated receivers combine their bearings to <b>estimate a horizontal position</b>.</p>
+  <h3>1. Scene geometry and materials</h3>
+  <p>Every tree trunk, foliage canopy and rock is a closed triangle mesh. The ray tracer uses the same triangles that you see. Each object has its own relative permittivity εr, effective conductivity σ and permeability μr. From these the page computes complex permittivity <code>εc = εr − jσ/(ωε0)</code>, refractive index <code>n = √(εc μr)</code>, attenuation <code>α = k0·|Im n|</code> (shown in dB/m), skin depth, wavelength inside the material, intrinsic impedance and Brewster angle. The values are representative presets near 2.4 GHz, not measurements of a specific site.</p>
+  <h3>2. Propagation (deterministic ray optics)</h3>
+  <ul>
+    <li><b>Direct path:</b> exact segment–triangle intersection. Each crossed object adds Fresnel interface loss at the actual facet angles (entry and exit), bulk attenuation <code>e^{−αL}</code> and extra phase <code>(β−k0)L</code>. It uses a straight-line (slab) approximation: refraction bending of this path is not followed. The visual probe does follow it.</li>
+    <li><b>Ground reflection:</b> image method on y = 0 with full TE/TM Fresnel coefficients for the chosen soil (water inside puddles), times the Rayleigh roughness factor <code>exp(−8(πσh cosθi/λ)²)</code>.</li>
+    <li><b>Facet reflections:</b> exact image method on every flat facet of rocks and trunks, with a physical-optics correction when a facet is smaller than the first Fresnel zone. Second-order ground→facet and facet→ground paths are included.</li>
+    <li><b>Diffraction:</b> ITU-R P.526 single knife-edge loss over the top and around both sides of each hard obstacle that blocks the direct path.</li>
+    <li><b>Diffuse scattering:</b> Lambertian effective-roughness model (Degli-Esposti) for rocks and trunks, and isotropic volume scattering for canopies. These paths are added incoherently (as power).</li>
+    <li><b>Polarisation</b> is carried as a complex 3-vector and split into TE/TM components at every interaction. The drone and receivers use dipole-like patterns.</li>
+  </ul>
+  <h3>3. Receiver and DoA</h3>
+  <p>Each receiver is an N-beam switched directional array with one RF chain, the same model as the project's <code>doa_sim.py</code>. For every beam the coherent drone paths are summed with that beam's gain. Interferers and noise are added, and the measured power is drawn as an average of L samples (Gamma distribution). <b>PV-ML</b> fits the power vector to the known beam patterns by maximum likelihood. Bartlett and MUSIC are shown for comparison on an equivalent coherent circular array, which needs N phase-synchronised receive chains. A Kalman filter tracks each bearing. Bearings are fused by weighted least squares, with an error ellipse from the covariance.</p>
+  <h3>4. Wave view (2D FDTD)</h3>
+  <p>When a trunk, canopy or rock is selected, a 2D TMz Yee-grid FDTD solves Maxwell's equations on a horizontal cross-section through the real mesh, at the chosen frequency. Neighbouring objects are included. A plane wave arrives from the drone's azimuth, and a graded absorbing layer surrounds the domain. It shows reflection, refraction (shorter wavelength inside), absorption, shadowing and diffraction directly. It is a 2D approximation (objects treated as infinitely long vertically) of a local patch, not a 3D full-scene Maxwell solution.</p>
+  <h3>5. Limitations to state in the report</h3>
+  <ul><li>Material values are illustrative presets. Real values depend on frequency, moisture, temperature and mineral content.</li><li>The ray model is high-frequency asymptotic, not full-wave. Facet–facet multi-bounce paths and transmission-plus-reflection combinations are not traced.</li><li>The RF data are synthetic. No SDR hardware is connected, and nothing here is a field-validated detection claim.</li><li>The arrays are azimuth-only, so drone altitude is not estimated by the localiser.</li></ul>
+  <div style="text-align:right;margin-top:12px"><button id="helpClose" class="primary">Close</button></div>
+</div></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const $ = id => document.getElementById(id);
+const D2R = Math.PI / 180;
+const fmt = (x, d = 1) => (x === null || x === undefined || !isFinite(x)) ? '—' : x.toFixed(d);
+const fmtDb = (x, d = 1) => !isFinite(x) ? (x > 0 ? '∞' : '—') : x.toFixed(d);
+
+// =================================================================================================
+// state
+// =================================================================================================
+const PRESETS = {
+  open:  { trees: 3,  rocks: 5,  puddles: 1, ground: 'soil_dry',     foliage: 'foliage',     gap: 7,   rockScale: 1.0, alt: 12, flight: 'orbit',   pine: 0.5 },
+  light: { trees: 16, rocks: 7,  puddles: 2, ground: 'soil_moist',   foliage: 'foliage',     gap: 5,   rockScale: 1.0, alt: 10, flight: 'orbit',   pine: 0.45 },
+  dense: { trees: 50, rocks: 9,  puddles: 3, ground: 'soil_wet',     foliage: 'foliage_wet', gap: 3.3, rockScale: 1.0, alt: 5,  flight: 'transit', pine: 0.6 },
+  rocky: { trees: 7,  rocks: 26, puddles: 1, ground: 'ground_rocky', foliage: 'foliage',     gap: 5,   rockScale: 1.6, alt: 7,  flight: 'across',  pine: 0.5 },
+  mixed: { trees: 26, rocks: 13, puddles: 3, ground: 'soil_moist',   foliage: 'foliage',     gap: 4,   rockScale: 1.2, alt: 9,  flight: 'orbit',   pine: 0.5 },
+};
+const RX_ANGLES = [205, 325, 85, 145, 25, 265];
+const RX_RADIUS = 34;
+const S = {
+  preset: 'mixed', seed: 7, groundKey: 'soil_moist', groundRough: 0.02, puddlesOn: true,
+  flight: 'orbit', speed: 4, alt: 9, heading: 30, orbitR: 18, pol: 'V', droneManual: [10, 9, -6],
+  f: 2.4e9, snrMode: 'ref', refSnr: 10, txDbm: 20, bwMHz: 10, nf: 6, L: 64,
+  nAnt: 6, mastH: 3, useTracked: false, decorrelate: true,
+  en: { direct: true, penetration: true, ground: true, specular: true, second: true, diffraction: true, diffuse: true },
+  scatterS: 0.35, foliageS: 0.45,
+  showAll: false, minRel: 40, particles: true, wave: true, rose: true, labels: true, covH: 3,
+  typeVis: { direct: true, ground: true, specular: true, second: true, diffraction: true, scatter: true, interf: true },
+  playing: true, t: 0, selRx: 0, cycle: 0.25,
+};
+const world = { trees: [], rocks: [], puddles: [], receivers: [], interferers: [], byId: new Map(), rfObjects: [], groundMat: RF.makeMaterial('soil_moist') };
+let sel = null;           // {type, id, part}
+let env = null;
+let loc = { valid: false };
+let logRows = [];
+let dirty = true, probeDirty = true;
+const rng = RF.mulberry32(12345);
+let simAccum = 0;
+
+// =================================================================================================
+// error reporting (visible in the page)
+// =================================================================================================
+function showError(msg) { const b = $('errBanner'); b.style.display = 'block'; b.textContent = 'Simulation error:\n' + msg; document.title = 'ERROR ' + msg; }
+window.addEventListener('error', e => showError(e.message + (e.filename ? '\n' + e.filename + ':' + e.lineno : '')));
+window.addEventListener('unhandledrejection', e => showError(String(e.reason && e.reason.stack || e.reason)));
+
+// =================================================================================================
+// three.js setup
+// =================================================================================================
+const viewEl = $('view');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+viewEl.appendChild(renderer.domElement);
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.domElement.className = 'labels';
+viewEl.appendChild(labelRenderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#e7edef');
+scene.fog = new THREE.Fog('#e7edef', 110, 230);
+const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 600);
+camera.position.set(58, 52, 70);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 3, 0);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.495;
+controls.minDistance = 4; controls.maxDistance = 260;
+
+scene.add(new THREE.HemisphereLight('#ffffff', '#a89b80', 1.1));
+const sun = new THREE.DirectionalLight('#fff6e8', 1.9);
+sun.position.set(40, 70, 25);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 200 });
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+const lineMats = [];
+function lineMat(width, opacity = 1, transparent = false) {
+  const m = new LineMaterial({ vertexColors: true, linewidth: width, transparent: transparent || opacity < 1, opacity, worldUnits: false });
+  lineMats.push(m); return m;
+}
+function resize() {
+  const w = viewEl.clientWidth, h = viewEl.clientHeight;
+  if (!w || !h) return;
+  renderer.setSize(w, h); labelRenderer.setSize(w, h);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  for (const m of lineMats) m.resolution.set(w, h);
+}
+new ResizeObserver(resize).observe(viewEl);
+
+function makeLabel(text, cls) {
+  const d = document.createElement('div'); d.className = 'lbl ' + (cls || ''); d.textContent = text;
+  const o = new CSS2DObject(d); return o;
+}
+function disposeObj(o) {
+  o.traverse(c => {
+    if (c.isCSS2DObject && c.element) c.element.remove();
+    if (c.geometry) c.geometry.dispose();
+    if (c.material) (Array.isArray(c.material) ? c.material : [c.material]).forEach(m => m.dispose && m.dispose());
+  });
+  if (o.parent) o.parent.remove(o);
+}
+
+// ---------- ground ----------
+const GROUND_COL = { soil_dry: '#b8a57d', soil_moist: '#8f7b59', soil_wet: '#6d5d47', ground_rocky: '#a29d92' };
+function groundTexture(hex) {
+  const c = document.createElement('canvas'); c.width = c.height = 512;
+  const g = c.getContext('2d'); g.fillStyle = hex; g.fillRect(0, 0, 512, 512);
+  const r = RF.mulberry32(99);
+  const base = new THREE.Color(hex);
+  for (let i = 0; i < 9000; i++) {
+    const k = 0.75 + r() * 0.5, col = base.clone().multiplyScalar(k);
+    g.fillStyle = '#' + col.getHexString(); g.globalAlpha = 0.35 + r() * 0.4;
+    const s = 1 + r() * 4; g.fillRect(r() * 512, r() * 512, s, s);
+  }
+  g.globalAlpha = 1;
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(10, 10); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const groundMesh = new THREE.Mesh(new THREE.PlaneGeometry(180, 180), new THREE.MeshStandardMaterial({ map: groundTexture(GROUND_COL.soil_moist), roughness: 0.97 }));
+groundMesh.rotation.x = -Math.PI / 2; groundMesh.receiveShadow = true;
+groundMesh.userData.pick = { type: 'ground', id: 'ground' };
+scene.add(groundMesh);
+const grid = new THREE.GridHelper(180, 36, '#6b6b62', '#8a8a80');
+grid.material.transparent = true; grid.material.opacity = 0.13; grid.position.y = 0.01;
+scene.add(grid);
+function setGroundMaterial(key) {
+  S.groundKey = key;
+  world.groundMat = RF.makeMaterial(key);
+  groundMesh.material.map.dispose();
+  groundMesh.material.map = groundTexture(GROUND_COL[key] || '#9a8a6a');
+  groundMesh.material.needsUpdate = true;
+  dirty = true; probeDirty = true;
+}
+
+// ---------- axes ----------
+(function axes() {
+  const g = new THREE.Group();
+  const mk = (dir, col, name) => {
+    const a = new THREE.ArrowHelper(new THREE.Vector3(...dir), new THREE.Vector3(0, 0.03, 0), 6, col, 0.8, 0.4);
+    g.add(a);
+    const l = makeLabel(name, 'ax'); l.element.style.color = col; l.position.set(dir[0] * 6.8, dir[1] * 6.8 + 0.03, dir[2] * 6.8); g.add(l);
+  };
+  mk([1, 0, 0], '#c92a2a', 'X'); mk([0, 1, 0], '#2f9e44', 'Y'); mk([0, 0, 1], '#1c5fb8', 'Z');
+  scene.add(g);
+})();
+
+// =================================================================================================
+// scene objects: trees, rocks, puddles
+// =================================================================================================
+const envGroup = new THREE.Group(); scene.add(envGroup);
+const ROCK_COL = { granite: '#9b9a94', limestone: '#c7c0a6', basalt: '#55575a', sandstone: '#a8865f' };
+const FOL_COL = { pine: ['#3d6b3c', '#355f36', '#46773f'], broad: ['#5e8a45', '#6b9550', '#557d3f'] };
+
+function deform(geo, r, amp) {
+  const pos = geo.attributes.position, map = new Map(), v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const key = v.x.toFixed(3) + ',' + v.y.toFixed(3) + ',' + v.z.toFixed(3);
+    if (!map.has(key)) map.set(key, 1 + (r() * 2 - 1) * amp);
+    v.multiplyScalar(map.get(key));
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  pos.needsUpdate = true;
+}
+function meshTris(mesh) {
+  mesh.updateWorldMatrix(true, false);
+  let g = mesh.userData.ni;
+  if (!g) { g = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry; mesh.userData.ni = g; }
+  const p = g.attributes.position, v = new THREE.Vector3(), out = new Float64Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(mesh.matrixWorld); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; }
+  return out;
+}
+
+function generateLayout(presetKey, seed) {
+  const P = PRESETS[presetKey];
+  const r = RF.mulberry32(seed * 7919 + 17);
+  const rxp = RX_ANGLES.map(a => [RX_RADIUS * Math.cos(a * D2R), -RX_RADIUS * Math.sin(a * D2R)]);
+  const trees = [], rocks = [], puddles = [];
+  const area = 47;
+  const free = (x, z, rad) => {
+    if (Math.hypot(x, z) > area) return false;
+    for (const p of rxp) if (Math.hypot(x - p[0], z - p[1]) < 5.5 + rad) return false;
+    for (const t of trees) if (Math.hypot(x - t.x, z - t.z) < Math.max(P.gap, t.R * 0.9) + rad * 0.5) return false;
+    for (const k of rocks) if (Math.hypot(x - k.x, z - k.z) < k.size + rad + 1) return false;
+    return true;
+  };
+  for (let tries = 0; trees.length < P.trees && tries < 6000; tries++) {
+    const x = (r() * 2 - 1) * area, z = (r() * 2 - 1) * area;
+    const type = r() < P.pine ? 'pine' : 'broad';
+    const h = 8 + r() * 8;
+    const R = type === 'pine' ? 1.6 + r() * 1.2 : 2.2 + r() * 1.6;
+    if (!free(x, z, 0.4)) continue;
+    const fb = RF.MATERIALS[P.foliage];
+    trees.push({
+      id: 'T' + (trees.length + 1), x, z, type, h, R, rot: r() * Math.PI * 2, trunkR: 0.16 + r() * 0.2,
+      wood: RF.makeMaterial(r() < 0.88 ? 'wood_live' : 'wood_dry'),
+      foliage: RF.makeMaterial(P.foliage, { er: +(fb.er * (0.92 + r() * 0.16)).toFixed(3), sigma: +(fb.sigma * (0.8 + r() * 0.4)).toFixed(5), moisture: Math.round(fb.moisture * (0.85 + r() * 0.3)) }),
+      colorIdx: Math.floor(r() * 3), seed: Math.floor(r() * 1e6),
+    });
+  }
+  const rockKeys = () => { const u = r(); return u < 0.45 ? 'granite' : u < 0.7 ? 'limestone' : u < 0.9 ? 'basalt' : 'sandstone'; };
+  for (let tries = 0; rocks.length < P.rocks && tries < 6000; tries++) {
+    const x = (r() * 2 - 1) * area, z = (r() * 2 - 1) * area;
+    const size = (0.6 + r() * 1.3) * P.rockScale;
+    if (!free(x, z, size)) continue;
+    rocks.push({ id: 'K' + (rocks.length + 1), x, z, size, sx: size * (0.8 + r() * 0.5), sy: size * (0.55 + r() * 0.45), sz: size * (0.8 + r() * 0.5), rot: r() * Math.PI * 2, mat: RF.makeMaterial(rockKeys()), seed: Math.floor(r() * 1e6) });
+  }
+  for (let tries = 0; puddles.length < P.puddles && tries < 3000; tries++) {
+    const x = (r() * 2 - 1) * 30, z = (r() * 2 - 1) * 30, rad = 1.3 + r() * 2.2;
+    if (!free(x, z, rad)) continue;
+    puddles.push({ id: 'W' + (puddles.length + 1), x, z, r: rad, mat: RF.makeMaterial('water') });
+  }
+  return { trees, rocks, puddles };
+}
+
+function buildTree(t) {
+  const g = new THREE.Group(); g.position.set(t.x, 0, t.z); g.rotation.y = t.rot;
+  const trunkH = t.type === 'pine' ? t.h * 0.5 : t.h * 0.56;
+  const tg = new THREE.CylinderGeometry(t.trunkR * 0.65, t.trunkR, trunkH, 9); tg.translate(0, trunkH / 2, 0);
+  const trunk = new THREE.Mesh(tg, new THREE.MeshStandardMaterial({ color: t.wood.key === 'wood_dry' ? '#8c7862' : '#6a4e36', roughness: 0.95, flatShading: true }));
+  trunk.castShadow = true; trunk.receiveShadow = true;
+  let fg;
+  if (t.type === 'pine') {
+    const parts = [];
+    for (let k = 0; k < 3; k++) {
+      const R = t.R * (1 - k * 0.27), hh = t.h * 0.36 * (1 - k * 0.12), base = t.h * 0.26 + k * t.h * 0.21;
+      const c = new THREE.ConeGeometry(R, hh, 9); c.translate(0, base + hh / 2, 0); parts.push(c);
+    }
+    fg = mergeGeometries(parts);
+  } else {
+    fg = new THREE.IcosahedronGeometry(t.R, 1);
+    deform(fg, RF.mulberry32(t.seed), 0.16);
+    fg.scale(1, 0.82, 1); fg.translate(0, t.h * 0.66, 0);
+  }
+  fg.computeVertexNormals();
+  const foliage = new THREE.Mesh(fg, new THREE.MeshStandardMaterial({ color: FOL_COL[t.type][t.colorIdx], roughness: 0.9, flatShading: true }));
+  foliage.castShadow = true; foliage.receiveShadow = true;
+  trunk.userData.pick = { type: 'tree', id: t.id, part: 'trunk' };
+  foliage.userData.pick = { type: 'tree', id: t.id, part: 'foliage' };
+  g.add(trunk, foliage);
+  envGroup.add(g);
+  t.group = g; t.trunk = trunk; t.foliageMesh = foliage;
+}
+function buildRock(k) {
+  const geo = new THREE.IcosahedronGeometry(1, 1);
+  deform(geo, RF.mulberry32(k.seed), 0.26);
+  geo.scale(k.sx, k.sy, k.sz);
+  geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: ROCK_COL[k.mat.key] || '#999', roughness: 0.85, flatShading: true }));
+  m.position.set(k.x, k.sy * 0.45, k.z); m.rotation.y = k.rot;
+  m.castShadow = true; m.receiveShadow = true;
+  m.userData.pick = { type: 'rock', id: k.id };
+  envGroup.add(m);
+  k.group = m; k.mesh = m;
+}
+function buildPuddle(p) {
+  const m = new THREE.Mesh(new THREE.CircleGeometry(p.r, 28), new THREE.MeshStandardMaterial({ color: '#7d98a8', roughness: 0.08, metalness: 0.15, transparent: true, opacity: 0.88 }));
+  m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.02, p.z); m.receiveShadow = true;
+  m.userData.pick = { type: 'puddle', id: p.id };
+  envGroup.add(m);
+  p.group = m; p.mesh = m;
+}
+function rebuildRF(item) {
+  if (item.trunk) {
+    item.rfTrunk = RF.makeObject({ id: item.id + '-trunk', group: item.id, kind: 'trunk', name: item.id + ' trunk', mat: item.wood, tris: meshTris(item.trunk) });
+    item.rfFoliage = RF.makeObject({ id: item.id + '-foliage', group: item.id, kind: 'foliage', name: item.id + ' canopy', mat: item.foliage, tris: meshTris(item.foliageMesh) });
+  } else if (item.mesh && item.sx) {
+    item.rf = RF.makeObject({ id: item.id, kind: 'rock', name: item.id, mat: item.mat, tris: meshTris(item.mesh) });
+  }
+}
+function collectRF() {
+  world.rfObjects = [];
+  for (const t of world.trees) world.rfObjects.push(t.rfTrunk, t.rfFoliage);
+  for (const k of world.rocks) world.rfObjects.push(k.rf);
+  dirty = true; probeDirty = true;
+}
+function buildEnvironment() {
+  for (const c of [...envGroup.children]) disposeObj(c);
+  const L = generateLayout(S.preset, S.seed);
+  world.trees = L.trees; world.rocks = L.rocks; world.puddles = L.puddles;
+  world.byId.clear();
+  world.trees.forEach(t => { buildTree(t); world.byId.set(t.id, { kind: 'tree', item: t }); });
+  world.rocks.forEach(k => { buildRock(k); world.byId.set(k.id, { kind: 'rock', item: k }); });
+  world.puddles.forEach(p => { buildPuddle(p); world.byId.set(p.id, { kind: 'puddle', item: p }); });
+  scene.updateMatrixWorld(true);
+  world.trees.forEach(rebuildRF); world.rocks.forEach(rebuildRF);
+  collectRF();
+  if (sel && (sel.type === 'tree' || sel.type === 'rock' || sel.type === 'puddle')) select(null);
+}
+
+// =================================================================================================
+// drone, receivers, interferers
+// =================================================================================================
+function makeQuad(bodyCol, accent) {
+  const g = new THREE.Group();
+  const dark = new THREE.MeshStandardMaterial({ color: bodyCol, roughness: 0.5, metalness: 0.3 });
+  const arm = new THREE.MeshStandardMaterial({ color: '#2b2d30', roughness: 0.6 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.13, 0.62), dark); g.add(body);
+  const top = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 10), new THREE.MeshStandardMaterial({ color: accent, roughness: 0.3, metalness: 0.2 }));
+  top.scale.set(1, 0.45, 1.3); top.position.y = 0.08; g.add(top);
+  g.userData.props = [];
+  for (const [sx, sz] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+    const a = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.62, 6), arm);
+    a.rotation.z = Math.PI / 2; a.rotation.y = Math.atan2(sz, sx) * -1; a.position.set(sx * 0.22, 0.02, sz * 0.22); g.add(a);
+    const mt = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.08, 10), arm); mt.position.set(sx * 0.44, 0.05, sz * 0.44); g.add(mt);
+    const pr = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.008, 0.05), new THREE.MeshStandardMaterial({ color: '#d7d7d2', roughness: 0.4 }));
+    pr.position.set(sx * 0.44, 0.1, sz * 0.44); g.add(pr); g.userData.props.push(pr);
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(0.25, 20), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
+    disc.rotation.x = -Math.PI / 2; disc.position.set(sx * 0.44, 0.1, sz * 0.44); g.add(disc);
+  }
+  const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.25, 5), arm); ant.position.set(0, -0.17, -0.2); g.add(ant);
+  const ledF = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ color: '#37b24d' })); ledF.position.set(0, 0, 0.32); g.add(ledF);
+  const ledR = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ color: '#e03131' })); ledR.position.set(0, 0, -0.32); g.add(ledR);
+  for (const s of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.5), arm); leg.position.set(s * 0.15, -0.12, 0); g.add(leg); }
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+const drone = { group: makeQuad('#3a3f44', '#d99a00'), pos: [10, 9, -6], prevPos: [10, 9, -6] };
+drone.group.scale.setScalar(2.4);
+drone.group.traverse(o => { if (o.isMesh) o.userData.pick = { type: 'drone', id: 'drone' }; });
+const droneLabel = makeLabel('Drone', 'dr'); droneLabel.position.set(0, 0.55, 0); drone.group.add(droneLabel);
+scene.add(drone.group);
+const droneShadowLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), new THREE.LineDashedMaterial({ color: '#7a5600', dashSize: 0.4, gapSize: 0.3, transparent: true, opacity: 0.6 }));
+scene.add(droneShadowLine);
+const droneMarker = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.75, 28), new THREE.MeshBasicMaterial({ color: '#d99a00', transparent: true, opacity: 0.7, side: THREE.DoubleSide }));
+droneMarker.rotation.x = -Math.PI / 2; scene.add(droneMarker);
+
+function buildReceiverModel(rx) {
+  if (rx.group) disposeObj(rx.group);
+  const g = new THREE.Group(); g.position.set(rx.pos[0], 0, rx.pos[2]);
+  const metal = new THREE.MeshStandardMaterial({ color: '#8d9399', roughness: 0.45, metalness: 0.6 });
+  const H = S.mastH;
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, H, 10), metal); mast.position.y = H / 2; g.add(mast);
+  for (let i = 0; i < 3; i++) {
+    const a = i * 2 * Math.PI / 3;
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.5, 6), metal);
+    leg.position.set(Math.cos(a) * 0.45, 0.6, Math.sin(a) * 0.45); leg.rotation.set(Math.sin(a) * 0.55, 0, -Math.cos(a) * 0.55); g.add(leg);
+  }
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.22, 16), new THREE.MeshStandardMaterial({ color: '#1f6f8b', roughness: 0.5 })); hub.position.y = H; g.add(hub);
+  const panelMat = new THREE.MeshStandardMaterial({ color: '#f1f1ec', roughness: 0.6 });
+  const n = S.nAnt;
+  for (let i = 0; i < n; i++) {
+    const az = rx.arr.boresights[i];
+    const d = RF.dirFromAz(az);
+    const p = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.34), panelMat);
+    p.position.set(d[0] * 0.42, H, d[2] * 0.42);
+    p.rotation.y = Math.atan2(-d[2], d[0]);
+    g.add(p);
+  }
+  // beam-power rose (one wedge per beam, scaled every cycle)
+  const rose = new THREE.Group(); rose.position.y = H + 0.02; rose.userData.wedges = [];
+  const bw = 360 / n * 0.9;
+  for (let i = 0; i < n; i++) {
+    const shape = new THREE.Shape(); shape.moveTo(0, 0);
+    for (let k = 0; k <= 8; k++) { const a = (-bw / 2 + bw * k / 8) * D2R; shape.lineTo(Math.cos(a), Math.sin(a)); }
+    shape.lineTo(0, 0);
+    const geo = new THREE.ShapeGeometry(shape); geo.rotateX(-Math.PI / 2);   // shape x -> world x, shape y -> world -z
+    const w = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: '#1f6f8b', transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false }));
+    w.rotation.y = rx.arr.boresights[i] * D2R;
+    w.scale.setScalar(0.01);
+    rose.add(w); rose.userData.wedges.push(w);
+  }
+  g.add(rose); rx.rose = rose;
+  const lbl = makeLabel(rx.id, 'rx'); lbl.position.set(0, H + 1.0, 0); g.add(lbl);
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.userData.pick = { type: 'receiver', id: rx.id }; } });
+  scene.add(g); rx.group = g;
+}
+function addReceiver(x, z) {
+  const idx = world.receivers.length;
+  if (idx >= 6) return;
+  const a = RX_ANGLES[idx];
+  if (x === undefined) { x = RX_RADIUS * Math.cos(a * D2R); z = -RX_RADIUS * Math.sin(a * D2R); }
+  const rx = { id: 'R' + (idx + 1), pos: [x, S.mastH, z], arr: new RF.SwitchedBeamArray(S.nAnt), tracker: new RF.AngleTracker(6), hist: [], last: null };
+  world.receivers.push(rx);
+  buildReceiverModel(rx);
+  dirty = true; updateRxCount();
+}
+function removeReceiver() {
+  if (world.receivers.length <= 1) return;
+  const rx = world.receivers.pop(); disposeObj(rx.group);
+  if (S.selRx >= world.receivers.length) S.selRx = 0;
+  if (sel && sel.type === 'receiver' && sel.id === rx.id) select(null);
+  dirty = true; updateRxCount();
+}
+function rebuildArrays() {
+  for (const rx of world.receivers) { rx.arr = new RF.SwitchedBeamArray(S.nAnt); rx.pos[1] = S.mastH; rx.tracker.reset(); rx.hist = []; buildReceiverModel(rx); }
+  dirty = true;
+}
+function updateRxCount() {
+  const n = world.receivers.length;
+  $('rxCount').textContent = n === 1 ? '1 receiver: it gives a bearing only. Add a second one to localise the drone.' : `${n} receivers: bearings are combined by weighted least squares.`;
+}
+
+const INT_TYPES = {
+  wifi: { label: 'Wi-Fi access point', h: 2.6, pos: [[-20, 22], [22, 24], [-26, -18]] },
+  ctrl: { label: 'Ground controller / phone', h: 1.3, pos: [[24, 16], [-12, -28], [6, 30]] },
+  drone2: { label: 'Second drone (hovering)', h: 14, pos: [[8, -26], [-24, 6], [28, -8]] },
+};
+function buildInterfererModel(it) {
+  if (it.group) disposeObj(it.group);
+  let g;
+  const red = new THREE.MeshStandardMaterial({ color: '#a61e4d', roughness: 0.5 });
+  const grey = new THREE.MeshStandardMaterial({ color: '#8d9399', roughness: 0.5, metalness: 0.5 });
+  if (it.type === 'drone2') { g = makeQuad('#5b2333', '#a61e4d'); g.scale.setScalar(2.0); g.position.set(it.pos[0], it.pos[1], it.pos[2]); }
+  else {
+    g = new THREE.Group(); g.position.set(it.pos[0], 0, it.pos[2]);
+    const H = it.pos[1];
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, H, 8), grey); pole.position.y = H / 2; g.add(pole);
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.12, 0.32), red); box.position.y = H; g.add(box);
+    for (let i = -1; i <= 1; i++) { const a = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.4, 5), grey); a.position.set(i * 0.15, H + 0.25, -0.1); g.add(a); }
+  }
+  const lbl = makeLabel(it.id, 'int'); lbl.position.set(0, it.type === 'drone2' ? 0.6 : it.pos[1] + 0.9, 0); g.add(lbl);
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.userData.pick = { type: 'interferer', id: it.id }; } });
+  scene.add(g); it.group = g;
+}
+function addInterferer(type) {
+  if (world.interferers.length >= 4) return;
+  const T = INT_TYPES[type];
+  const k = world.interferers.filter(i => i.type === type).length % 3;
+  const it = { id: 'I' + (world.interferers.length + 1), type, pos: [T.pos[k][0], T.h, T.pos[k][1]], eirpRel: 0, channel: 'co', on: true };
+  world.interferers.push(it);
+  buildInterfererModel(it);
+  renderIntList(); dirty = true;
+}
+function renumberInterferers() { world.interferers.forEach((it, i) => { it.id = 'I' + (i + 1); buildInterfererModel(it); }); }
+function renderIntList() {
+  const box = $('intList');
+  if (!world.interferers.length) { box.innerHTML = '<div class="note">No other transmitters. The drone is the only source.</div>'; return; }
+  box.innerHTML = world.interferers.map((it, i) => `
+    <div class="intItem" data-i="${i}">
+      <div class="top"><label class="chk"><input type="checkbox" data-k="on" ${it.on ? 'checked' : ''}> ${it.id} · ${INT_TYPES[it.type].label}</label><button class="small" data-k="del">✕</button></div>
+      <div class="f"><label>EIRP relative to drone <span class="v">${it.eirpRel > 0 ? '+' : ''}${it.eirpRel} dB</span></label><input type="range" min="-20" max="20" value="${it.eirpRel}" data-k="eirp"></div>
+      <select data-k="ch"><option value="co" ${it.channel === 'co' ? 'selected' : ''}>Same channel (co-channel)</option><option value="adj" ${it.channel === 'adj' ? 'selected' : ''}>Adjacent channel (25 dB rejection)</option></select>
+    </div>`).join('');
+  box.querySelectorAll('.intItem').forEach(el => {
+    const it = world.interferers[+el.dataset.i];
+    el.querySelector('[data-k=on]').onchange = e => { it.on = e.target.checked; it.group.visible = it.on; dirty = true; };
+    el.querySelector('[data-k=del]').onclick = () => { disposeObj(it.group); world.interferers.splice(+el.dataset.i, 1); if (sel && sel.type === 'interferer') select(null); renumberInterferers(); renderIntList(); dirty = true; };
+    const r = el.querySelector('[data-k=eirp]');
+    r.oninput = e => { it.eirpRel = +e.target.value; r.previousElementSibling.querySelector('.v').textContent = (it.eirpRel > 0 ? '+' : '') + it.eirpRel + ' dB'; dirty = true; };
+    el.querySelector('[data-k=ch]').onchange = e => { it.channel = e.target.value; dirty = true; };
+  });
+}
+
+// =================================================================================================
+// flight paths (deterministic)
+// =================================================================================================
+function netCenter() {
+  const r = world.receivers; let x = 0, z = 0;
+  for (const q of r) { x += q.pos[0]; z += q.pos[2]; }
+  return r.length ? [x / r.length, 0, z / r.length] : [0, 0, 0];
+}
+function netRadius() { const c = netCenter(); let m = 0; for (const q of world.receivers) m = Math.max(m, Math.hypot(q.pos[0] - c[0], q.pos[2] - c[2])); return Math.max(m, 10); }
+function flightPos(t) {
+  const c = netCenter(), Rn = netRadius(), a = S.alt, v = S.speed, hd = S.heading * D2R;
+  const rot = (x, z) => [c[0] + x * Math.cos(hd) + z * Math.sin(hd), c[2] - x * Math.sin(hd) + z * Math.cos(hd)];
+  switch (S.flight) {
+    case 'orbit': { const r = S.orbitR, ang = hd + (v / r) * t; return [c[0] + r * Math.cos(ang), a, c[2] - r * Math.sin(ang)]; }
+    case 'across': { const A = Rn + 10, per = 4 * A / Math.max(v, 0.01), ph = (((t % per) + per) % per) / per; const s = ph < 0.5 ? -A + 4 * A * ph : 3 * A - 4 * A * ph; const d = RF.dirFromAz(S.heading); return [c[0] + d[0] * s, a, c[2] + d[2] * s]; }
+    case 'approach': { const A = Rn + 14, dur = (A * 0.92) / Math.max(v, 0.01); const s = A - ((((t % dur) + dur) % dur) / dur) * A * 0.92; const d = RF.dirFromAz(S.heading); return [c[0] + d[0] * s, a, c[2] + d[2] * s]; }
+    case 'figure8': { const r = S.orbitR, th = (v / (r * 1.6)) * t; const [x, z] = rot(r * Math.sin(th), r * Math.sin(th) * Math.cos(th)); return [x, a, z]; }
+    case 'transit': { const r = Math.min(S.orbitR * 1.7, Rn * 0.95), th = (v / (r * 1.35)) * t; const [x, z] = rot(r * Math.sin(th), 0.62 * r * Math.sin(2 * th + 0.6)); return [x, Math.max(1.5, a + 1.2 * Math.sin(3 * th)), z]; }
+    default: return [S.droneManual[0], S.alt, S.droneManual[2]];
+  }
+}
+
+// =================================================================================================
+// RF cycle
+// =================================================================================================
+function noiseW() { return RF.noisePowerW(S.bwMHz * 1e6, S.nf); }
+function txPowerW() {
+  if (S.snrMode === 'ref') { const lam = RF.C0 / S.f; return RF.undb(S.refSnr) * noiseW() * Math.pow(4 * Math.PI * 50 / lam, 2) / 1.64; }
+  return RF.dbmToW(S.txDbm);
+}
+function buildEnv() {
+  env = RF.makeEnv({
+    f: S.f, objects: world.rfObjects, groundMat: world.groundMat, groundRough: S.groundRough, groundHalf: 88,
+    puddles: S.puddlesOn ? world.puddles.map(p => ({ x: p.x, z: p.z, r: p.r, mat: p.mat, id: p.id })) : [],
+    en: Object.assign({}, S.en), scatterS: S.scatterS, foliageS: S.foliageS, maxPaths: 60, minRelDb: -70,
+  });
+}
+function droneTx() { return { id: 'drone', pos: drone.pos.slice(), ptW: txPowerW(), pol: S.pol }; }
+function interfTx() {
+  const pt = txPowerW();
+  return world.interferers.filter(i => i.on).map(i => ({ id: i.id, pos: i.pos.slice(), ptW: pt * RF.undb(i.eirpRel), pol: S.pol, rejection: i.channel === 'adj' ? Math.pow(10, -25 / 20) : 1 }));
+}
+
+function rfCycle(advance) {
+  buildEnv();
+  const N = noiseW();
+  const tx = droneTx();
+  const ints = interfTx();
+  for (const rx of world.receivers) {
+    const rxd = { pos: rx.pos, pol: S.pol };
+    const paths = RF.tracePaths(env, tx, rxd);
+    const isets = ints.map(it => ({ id: it.id, paths: RF.tracePaths(env, it, rxd), rejection: it.rejection }));
+    const sum = RF.channelSummary(paths);
+    let intW = 0;
+    for (const s of isets) for (const p of s.paths) intW += p.powerW * s.rejection * s.rejection;
+    const bp = RF.beamPowers(rx.arr, paths, isets, N, rng, S.decorrelate);
+    const meas = RF.measureBeams(bp.m, S.L, rng);
+    const est = RF.pvmlEstimate(rx.arr, meas, S.L);
+    const trueAz = RF.azOf(RF.vsub(tx.pos, rx.pos));
+    let track;
+    if (advance || !rx.tracker.x) track = rx.tracker.step(est.theta, est.sigma, S.cycle);
+    else track = rx.tracker.out();
+    const last = {
+      paths, isets, sum, sigW: sum.totalW, intW, meas, m: bp.m, est, trueAz, track,
+      snrDb: RF.db10(sum.totalW / N), sirDb: intW > 0 ? RF.db10(sum.totalW / intW) : Infinity, sinrDb: RF.db10(sum.totalW / (intW + N)),
+      err: RF.wrap180(est.theta - trueAz), terr: RF.wrap180(track.angle - trueAz),
+    };
+    const idx = world.receivers.indexOf(rx);
+    if (idx === S.selRx) {
+      const K = Math.min(S.nAnt * S.L, 256);
+      const R = RF.ucaCovariance(S.nAnt, paths, isets, N, K, rng);
+      last.spec = RF.arraySpectra(R, Math.min(1 + isets.length, S.nAnt - 1));
+    }
+    rx.last = last;
+    if (advance) { rx.hist.push({ t: S.t, tr: trueAz, est: est.theta, trk: track.angle }); if (rx.hist.length > 480) rx.hist.shift(); }
+  }
+  loc = RF.localize(world.receivers.map(rx => ({
+    x: rx.pos[0], z: rx.pos[2],
+    az: S.useTracked ? rx.last.track.angle : rx.last.est.theta,
+    sigma: S.useTracked ? Math.max(rx.last.track.sigma, 0.5) : rx.last.est.sigma,
+  })));
+  if (advance) logCycle(tx);
+  updatePathVisuals();
+  updateLocVisuals();
+  updateRoses();
+  renderResults();
+  updateInspectorLive();
+  probeDirty = true;
+}
+
+function logCycle(tx) {
+  const posErr = loc.valid ? Math.hypot(loc.x - tx.pos[0], loc.z - tx.pos[2]) : null;
+  for (const rx of world.receivers) {
+    const L = rx.last;
+    logRows.push({
+      time_s: +S.t.toFixed(2), receiver: rx.id, rx_x_m: +rx.pos[0].toFixed(2), rx_z_m: +rx.pos[2].toFixed(2),
+      drone_x_m: +tx.pos[0].toFixed(2), drone_y_m: +tx.pos[1].toFixed(2), drone_z_m: +tx.pos[2].toFixed(2),
+      link_state: L.sum.state, true_az_deg: +L.trueAz.toFixed(2), pvml_az_deg: +L.est.theta.toFixed(2), tracked_az_deg: +L.track.angle.toFixed(2),
+      error_deg: +L.err.toFixed(2), tracked_error_deg: +L.terr.toFixed(2), pvml_sigma_deg: +L.est.sigma.toFixed(2),
+      snr_db: +L.snrDb.toFixed(2), sir_db: isFinite(L.sirDb) ? +L.sirDb.toFixed(2) : '', sinr_db: +L.sinrDb.toFixed(2),
+      n_paths: L.sum.nPaths, strongest_path: L.sum.strongest ? L.sum.strongest.type : '', k_factor_db: +L.sum.kFactorDb.toFixed(2),
+      rms_delay_ns: +L.sum.rmsDelayNs.toFixed(2), direct_obstruction_loss_db: L.sum.directLossDb !== null ? +L.sum.directLossDb.toFixed(2) : '',
+      est_x_m: loc.valid ? +loc.x.toFixed(2) : '', est_z_m: loc.valid ? +loc.z.toFixed(2) : '', horiz_pos_error_m: posErr !== null ? +posErr.toFixed(2) : '',
+      freq_ghz: S.f / 1e9, ground: S.groundKey, scenario: S.preset, interferers_on: world.interferers.filter(i => i.on).length,
+    });
+  }
+  if (logRows.length > 30000) logRows.splice(0, logRows.length - 30000);
+}
+
+// =================================================================================================
+// path visuals (fat lines + interaction markers + animated energy packets)
+// =================================================================================================
+const TYPE_COL = { direct: '#d99a00', obs: '#c92a2a', ground: '#2f9e44', specular: '#e8590c', second: '#c2255c', diffraction: '#7048e8', scatter: '#7d858c', interf: '#a61e4d' };
+const TYPE_NAME = { direct: 'Direct', ground: 'Ground reflection', specular: 'Facet reflection', 'ground-specular': 'Ground → facet', 'specular-ground': 'Facet → ground', diffraction: 'Diffraction', scatter: 'Diffuse scatter' };
+const visKey = t => t === 'ground-specular' || t === 'specular-ground' ? 'second' : t;
+const BG = new THREE.Color('#ffffff');
+function fadeCol(hex, f) { return new THREE.Color(hex).lerp(BG, Math.min(0.88, Math.max(0, f))); }
+
+const pathLines = {};
+for (const [k, w] of [['direct', 3.2], ['obs', 4.2], ['ground', 2.4], ['specular', 2.4], ['second', 2], ['diffraction', 2.4], ['scatter', 1.4], ['interf', 1.6]]) {
+  const l = new LineSegments2(new LineSegmentsGeometry(), lineMat(w)); l.visible = false; l.frustumCulled = false; l.renderOrder = 2; scene.add(l); pathLines[k] = l;
+}
+const markerGeo = new THREE.SphereGeometry(0.22, 10, 8);
+const markers = new THREE.InstancedMesh(markerGeo, new THREE.MeshBasicMaterial({ color: '#ffffff' }), 600);
+markers.count = 0; markers.frustumCulled = false; scene.add(markers);
+
+function setLines(line, pos, col) {
+  if (!pos.length) { line.visible = false; return; }
+  line.geometry.dispose();
+  const g = new LineSegmentsGeometry(); g.setPositions(pos); g.setColors(col);
+  line.geometry = g; line.visible = true;
+}
+function pushSeg(store, a, b, c0, c1) { store.p.push(a[0], a[1], a[2], b[0], b[1], b[2]); store.c.push(c0.r, c0.g, c0.b, (c1 || c0).r, (c1 || c0).g, (c1 || c0).b); }
+
+let packetChains = [];   // for animated packets on main paths
+function updatePathVisuals() {
+  const stores = {}; for (const k in pathLines) stores[k] = { p: [], c: [] };
+  const mk = []; packetChains = [];
+  const targets = S.showAll ? world.receivers : [world.receivers[S.selRx]].filter(Boolean);
+  for (const rx of targets) {
+    if (!rx.last) continue;
+    const paths = rx.last.paths;
+    const pmax = Math.max(...paths.map(p => p.powerW), 1e-300);
+    for (const p of paths) {
+      const rel = RF.db10(p.powerW / pmax);
+      if (rel < -S.minRel && !(p.type === 'direct')) continue;
+      if (p.type === 'scatter' && rel < -Math.min(S.minRel, 28)) continue;   // diffuse paths are numerous: draw only the strong ones
+      const vk = visKey(p.type);
+      if (!S.typeVis[vk]) continue;
+      const fade = Math.max(0, -rel / S.minRel) * 0.85;
+      const col = fadeCol(TYPE_COL[vk], fade);
+      if (p.type === 'direct') {
+        // split into free-space parts (amber) and parts inside objects (red)
+        const a = p.points[0], b = p.points[1];
+        let cur = a;
+        const cr = [...p.crossings].sort((x, y) => RF.vdist(a, x.p0) - RF.vdist(a, y.p0));
+        for (const c of cr) { pushSeg(stores.direct, cur, c.p0, col); pushSeg(stores.obs, c.p0, c.p1, fadeCol(TYPE_COL.obs, fade * 0.5)); cur = c.p1; mk.push([c.p0, '#c92a2a'], [c.p1, '#c92a2a']); }
+        pushSeg(stores.direct, cur, b, col);
+      } else {
+        for (let i = 1; i < p.points.length; i++) pushSeg(stores[vk], p.points[i - 1], p.points[i], col);
+        for (const it of p.interactions) if (it.point) mk.push([it.point, TYPE_COL[vk]]);
+      }
+      if (S.particles && rel > -30) packetChains.push(chainFromPath(p, TYPE_COL[vk]));
+    }
+    // interferer paths (only meaningful ones)
+    if (S.typeVis.interf) for (const set of rx.last.isets) {
+      const imax = Math.max(...set.paths.map(p => p.powerW), 1e-300);
+      for (const p of set.paths) {
+        const rel = RF.db10(p.powerW / imax);
+        if (rel < -Math.min(S.minRel, 25)) continue;
+        const col = fadeCol(TYPE_COL.interf, Math.max(0, -rel / 25) * 0.8 + 0.1);
+        for (let i = 1; i < p.points.length; i++) pushSeg(stores.interf, p.points[i - 1], p.points[i], col);
+      }
+    }
+  }
+  for (const k in pathLines) setLines(pathLines[k], stores[k].p, stores[k].c);
+  // while a material object is inspected, push the network paths into the background
+  const inspecting = sel && ['tree', 'rock', 'ground', 'puddle'].includes(sel.type);
+  for (const k in pathLines) { const m = pathLines[k].material; m.transparent = inspecting; m.opacity = inspecting ? 0.22 : 1; m.needsUpdate = true; }
+  packets.material.opacity = inspecting ? 0.25 : 1;
+  const m4 = new THREE.Matrix4();
+  markers.count = Math.min(mk.length, 600);
+  for (let i = 0; i < markers.count; i++) { m4.makeTranslation(mk[i][0][0], mk[i][0][1], mk[i][0][2]); markers.setMatrixAt(i, m4); markers.setColorAt(i, new THREE.Color(mk[i][1])); }
+  markers.instanceMatrix.needsUpdate = true; if (markers.instanceColor) markers.instanceColor.needsUpdate = true;
+}
+
+/** a chain of segments with per-segment speed factor (slower inside materials: v = c / n) */
+function chainFromPath(p, hex) {
+  const segs = [];
+  let t = 0;
+  for (let i = 1; i < p.points.length; i++) {
+    const a = p.points[i - 1], b = p.points[i];
+    const L = RF.vdist(a, b);
+    const ab = RF.vnorm(RF.vsub(b, a));
+    // crossings on this leg
+    const cr = p.crossings.filter(c => {
+      const m = RF.vlerp(c.p0, c.p1, 0.5), am = RF.vsub(m, a), proj = RF.vdot(am, ab);
+      return proj > 0 && proj < L && RF.vlen(RF.vsub(am, RF.vscale(ab, proj))) < 1e-3;
+    }).sort((x, y) => RF.vdist(a, x.p0) - RF.vdist(a, y.p0));
+    let cur = a;
+    for (const c of cr) {
+      const l1 = RF.vdist(cur, c.p0); if (l1 > 1e-6) { segs.push({ a: cur, b: c.p0, t0: t, dur: l1 }); t += l1; }
+      const n = Math.max(1, RF.matProps(c.obj.mat, S.f).n.re);
+      const l2 = RF.vdist(c.p0, c.p1); segs.push({ a: c.p0, b: c.p1, t0: t, dur: l2 * n, slow: true }); t += l2 * n;
+      cur = c.p1;
+    }
+    const l3 = RF.vdist(cur, b); if (l3 > 1e-6) { segs.push({ a: cur, b, t0: t, dur: l3 }); t += l3; }
+  }
+  return { segs, total: t, col: new THREE.Color(hex) };
+}
+
+const dotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 30); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); return t; })();
+function makePoints(max, size) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(max * 3), 3));
+  g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(max * 3), 3));
+  g.setDrawRange(0, 0);
+  const pts = new THREE.Points(g, new THREE.PointsMaterial({ size, map: dotTex, vertexColors: true, transparent: true, depthWrite: false, sizeAttenuation: true, alphaTest: 0.05 }));
+  pts.frustumCulled = false; pts.renderOrder = 3; scene.add(pts); return pts;
+}
+const packets = makePoints(1500, 0.55);
+const probePackets = makePoints(2500, 0.32); probePackets.renderOrder = 7;
+const VIS_SPEED = 16;      // metres per second of animation ("slow motion": real waves travel at c)
+const EMIT = 0.35;         // seconds between packets
+function animateChains(points, chains, clock, speed) {
+  const pos = points.geometry.attributes.position.array, col = points.geometry.attributes.color.array;
+  const max = pos.length / 3;
+  let n = 0;
+  for (const ch of chains) {
+    const T = ch.total / speed + 0.6;
+    const nEm = Math.ceil(T / EMIT) + 1;
+    for (let e = 0; e < nEm && n < max; e++) {
+      const age = ((clock - e * EMIT) % T + T) % T;     // time since this packet left the source
+      const d = age * speed;                             // optical distance travelled
+      const sg = ch.segs.find(s => d >= s.t0 && d < s.t0 + s.dur);
+      if (!sg) continue;
+      const u = (d - sg.t0) / sg.dur;
+      const p = RF.vlerp(sg.a, sg.b, u);
+      pos[n * 3] = p[0]; pos[n * 3 + 1] = p[1]; pos[n * 3 + 2] = p[2];
+      const c = sg.col || ch.col; const k = sg.w !== undefined ? sg.w : 1;
+      col[n * 3] = c.r * k + (1 - k); col[n * 3 + 1] = c.g * k + (1 - k); col[n * 3 + 2] = c.b * k + (1 - k);
+      n++;
+    }
+  }
+  points.geometry.setDrawRange(0, n);
+  points.geometry.attributes.position.needsUpdate = true; points.geometry.attributes.color.needsUpdate = true;
+}
+
+// ---------- wavefronts ----------
+const waves = [];
+function makeWave(col) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 14), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.05, wireframe: true, depthWrite: false }));
+  m.renderOrder = 1; scene.add(m); return m;
+}
+for (let i = 0; i < 3; i++) waves.push({ m: makeWave('#d99a00'), ph: i / 3 });
+const intWaves = [];
+
+// ---------- localisation visuals ----------
+const estMarker = new THREE.Group();
+{
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.7, 1.0, 32), new THREE.MeshBasicMaterial({ color: '#7048e8', side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.06; estMarker.add(ring);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 40, 6), new THREE.MeshBasicMaterial({ color: '#7048e8', transparent: true, opacity: 0.25 }));
+  pole.position.y = 20; estMarker.add(pole);
+  const l = makeLabel('Estimate', 'est'); l.position.set(0, 1.5, 0); estMarker.add(l);
+  estMarker.userData.label = l;
+}
+scene.add(estMarker);
+const ellipse = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: '#7048e8', transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false }));
+ellipse.rotation.x = -Math.PI / 2; ellipse.position.y = 0.05; scene.add(ellipse);
+const bearingLines = new LineSegments2(new LineSegmentsGeometry(), lineMat(1.6)); bearingLines.frustumCulled = false; scene.add(bearingLines);
+function updateLocVisuals() {
+  const st = { p: [], c: [] };
+  const cEst = new THREE.Color('#1f6f8b'), cTrk = new THREE.Color('#7048e8');
+  for (const rx of world.receivers) {
+    if (!rx.last) continue;
+    const L = 75;
+    const h = rx.pos[1];
+    const d1 = RF.dirFromAz(rx.last.est.theta), d2 = RF.dirFromAz(rx.last.track.angle);
+    // bearing rays drawn at mast height (azimuth-only arrays carry no elevation information)
+    pushSeg(st, [rx.pos[0], h, rx.pos[2]], [rx.pos[0] + d1[0] * L, h, rx.pos[2] + d1[2] * L], cEst, fadeCol('#1f6f8b', 0.8));
+    pushSeg(st, [rx.pos[0], h + 0.05, rx.pos[2]], [rx.pos[0] + d2[0] * L * 0.6, h + 0.05, rx.pos[2] + d2[2] * L * 0.6], cTrk, fadeCol('#7048e8', 0.85));
+  }
+  setLines(bearingLines, st.p, st.c);
+  estMarker.visible = loc.valid; ellipse.visible = loc.valid;
+  if (loc.valid) {
+    estMarker.position.set(loc.x, 0, loc.z);
+    const a = Math.min(Math.max(loc.ellipse.a * 2, 0.4), 40), b = Math.min(Math.max(loc.ellipse.b * 2, 0.4), 40);
+    ellipse.position.set(loc.x, 0.05, loc.z);
+    ellipse.scale.set(a, b, 1);
+    ellipse.rotation.set(-Math.PI / 2, 0, loc.ellipse.angle);
+  }
+}
+function updateRoses() {
+  for (const rx of world.receivers) {
+    if (!rx.rose || !rx.last) continue;
+    rx.rose.visible = S.rose;
+    const pd = Array.from(rx.last.meas, v => RF.db10(v));
+    const mx = Math.max(...pd);
+    rx.rose.userData.wedges.forEach((w, i) => { const len = 0.3 + 3.2 * Math.max(0, (pd[i] - (mx - 25)) / 25); w.scale.set(len, 1, len); });
+  }
+}
+
+// =================================================================================================
+// selection + probe rays (wave interaction with the selected object)
+// =================================================================================================
+const selRing = new THREE.Mesh(new THREE.RingGeometry(1, 1.15, 48), new THREE.MeshBasicMaterial({ color: '#1f6f8b', side: THREE.DoubleSide, transparent: true, opacity: 0.85 }));
+selRing.rotation.x = -Math.PI / 2; selRing.visible = false; scene.add(selRing);
+const probeLines = {};
+for (const [k, w] of [['inc', 2.2], ['refl', 2.6], ['inside', 3.4], ['exit', 2.6], ['normal', 1.4], ['scat', 1.2], ['int', 1.6]]) {
+  const l = new LineSegments2(new LineSegmentsGeometry(), lineMat(w, 1, true)); l.visible = false; l.frustumCulled = false; l.renderOrder = 6; scene.add(l); probeLines[k] = l;
+}
+const PROBE_COL = { inc: '#d99a00', refl: '#e8590c', inside: '#0b8f6a', exit: '#1c6fd1', normal: '#495057', scat: '#868e96', int: '#38c9a0' };
+let probe = null;          // stats of the central probe ray
+let probeChains = [];
+
+function selRF() {
+  if (!sel) return null;
+  if (sel.type === 'tree') { const t = world.byId.get(sel.id).item; return sel.part === 'foliage' ? t.rfFoliage : t.rfTrunk; }
+  if (sel.type === 'rock') return world.byId.get(sel.id).item.rf;
+  return null;
+}
+function selMaterial() {
+  if (!sel) return null;
+  if (sel.type === 'ground') return world.groundMat;
+  if (sel.type === 'puddle') return world.byId.get(sel.id).item.mat;
+  const o = selRF(); return o ? o.mat : null;
+}
+function clearProbe() { for (const k in probeLines) probeLines[k].visible = false; probeChains = []; probePackets.geometry.setDrawRange(0, 0); probe = null; }
+
+function computeProbe() {
+  probeDirty = false;
+  clearProbe();
+  if (!sel || !['tree', 'rock', 'ground', 'puddle'].includes(sel.type)) return;
+  const st = {}; for (const k in probeLines) st[k] = { p: [], c: [] };
+  const src = drone.pos.slice();
+  const lam = RF.C0 / S.f;
+  const mat = selMaterial();
+  const mp = RF.matProps(mat, S.f);
+  const nRe = mp.n.re;
+  const C = k => new THREE.Color(PROBE_COL[k]);
+  const fc = (k, pw) => fadeCol(PROBE_COL[k], 0.5 * (1 - Math.pow(Math.max(0, Math.min(1, pw)), 0.3)));
+  const stats = [];
+  const addChain = (segs) => { let t = 0; const out = []; for (const s of segs) { if (s.pw < 0.003) break; out.push({ a: s.a, b: s.b, t0: t, dur: s.len * s.n, col: C(s.k), w: 0.6 + 0.4 * Math.min(1, Math.sqrt(s.pw)) }); t += s.len * s.n; } probeChains.push({ segs: out, total: t, col: C('inc') }); };
+
+  if (sel.type === 'ground' || sel.type === 'puddle') {
+    // probe the specular ground point toward the selected receiver (or straight below the drone)
+    const rx = world.receivers[S.selRx];
+    let P0;
+    if (sel.type === 'puddle') { const p = world.byId.get(sel.id).item; P0 = [p.x, 0, p.z]; }
+    else if (rx) { const s = src[1] / (src[1] + rx.pos[1]); P0 = [src[0] + (rx.pos[0] - src[0]) * s, 0, src[2] + (rx.pos[2] - src[2]) * s]; }
+    else P0 = [src[0] + 5, 0, src[2]];
+    const offs = [[0, 0], [1.2, 0], [-1.2, 0], [0, 1.2], [0, -1.2]];
+    for (const [ox, oz] of offs) {
+      const P = [P0[0] + ox, 0, P0[2] + oz];
+      const k = RF.vnorm(RF.vsub(P, src));
+      let E = RF.launchField(1, S.pol, k); const e0 = Math.sqrt(E.reduce((s, c) => s + c.re * c.re + c.im * c.im, 0)) || 1; E = E.map(c => RF.cscale(c, 1 / e0));
+      const rf = RF.reflectField(E, k, [0, 1, 0], mat, S.f, sel.type === 'puddle' ? 0 : S.groundRough, lam);
+      const R = rf.E.reduce((s, c) => s + c.re * c.re + c.im * c.im, 0);
+      const T = 1 - R;
+      const t = RF.refractDir(k, [0, 1, 0], 1, nRe);
+      const depth = Math.min(2.5, 3 / Math.max(mp.alpha, 0.3));
+      const ins = RF.vadd(P, RF.vscale(t, depth / Math.max(0.05, -t[1])));
+      const Lin = RF.vdist(P, ins);
+      const pEnd = T * Math.exp(-2 * mp.alpha * Lin);
+      const pr = RF.vadd(P, RF.vscale(rf.kr, 9));
+      pushSeg(st.inc, src, P, C('inc'));
+      pushSeg(st.refl, P, pr, fc('refl', R), fc('refl', R * 0.3));
+      pushSeg(st.inside, P, ins, fc('inside', T), fc('inside', pEnd));
+      pushSeg(st.normal, P, [P[0], 1.4, P[2]], C('normal'));
+      addChain([{ a: src, b: P, len: RF.vdist(src, P), n: 1, k: 'inc', pw: 1 }, { a: P, b: pr, len: 9, n: 1, k: 'refl', pw: R }]);
+      addChain([{ a: src, b: P, len: RF.vdist(src, P), n: 1, k: 'inc', pw: 1 }, { a: P, b: ins, len: Lin, n: nRe, k: 'inside', pw: T }]);
+      stats.push({ thetaI: rf.thetaDeg, thetaT: Math.asin(Math.min(1, Math.sin(rf.thetaDeg * D2R) / nRe)) / D2R, R, Rte: RF.cabs2(rf.gs), Rtm: RF.cabs2(rf.gp), T, inside: Lin, absorbedFrac: T - pEnd, exitFrac: 0, halfspace: true, rough: rf.rho });
+    }
+  } else {
+    const obj = selRF();
+    const c = obj.center;
+    const k0 = RF.vnorm(RF.vsub(c, src));
+    let e1 = RF.vcross(k0, [0, 1, 0]); if (RF.vlen(e1) < 1e-6) e1 = [1, 0, 0]; e1 = RF.vnorm(e1);
+    const e2 = RF.vnorm(RF.vcross(e1, k0));
+    const isFol = obj.kind === 'foliage';
+    const ext = obj.kind === 'trunk' ? Math.max(0.12, (obj.bbMax[0] - obj.bbMin[0]) / 2) : obj.radius * 0.8;
+    const G = 2;
+    const rr = RF.mulberry32(5);
+    for (let a = -G; a <= G; a++) for (let b = -G; b <= G; b++) {
+      if (a * a + b * b > G * G + 1) continue;
+      const u = a / G, v = b / G;
+      let aim;
+      if (obj.kind === 'trunk') {
+        const yMid = Math.min(Math.max(src[1], obj.bbMin[1] + 0.6), obj.bbMax[1] - 0.4);
+        const span = Math.min(1.6, (obj.bbMax[1] - obj.bbMin[1]) * 0.35);
+        aim = [c[0] + e1[0] * u * ext * 0.95, yMid + v * span, c[2] + e1[2] * u * ext * 0.95];
+      } else aim = RF.vadd(c, RF.vadd(RF.vscale(e1, u * ext), RF.vscale(e2, v * ext)));
+      const dir = RF.vnorm(RF.vsub(aim, src));
+      const hit = RF.rayFirstHit([obj], src, dir, RF.vdist(src, aim) + obj.radius * 3, null);
+      if (!hit) continue;
+      let E = RF.launchField(1, S.pol, dir); const e0 = Math.sqrt(E.reduce((s, cc) => s + cc.re * cc.re + cc.im * cc.im, 0)) || 1; E = E.map(cc => RF.cscale(cc, 1 / e0));
+      const rf = RF.reflectField(E, dir, hit.n, obj.mat, S.f, 0, lam);
+      const R = rf.E.reduce((s, cc) => s + cc.re * cc.re + cc.im * cc.im, 0);
+      const T = 1 - R;
+      const nOut = RF.vdot(dir, hit.n) > 0 ? RF.vscale(hit.n, -1) : hit.n;
+      const P = hit.point;
+      pushSeg(st.inc, src, P, C('inc'));
+      pushSeg(st.normal, P, RF.vadd(P, RF.vscale(nOut, isFol ? 0.6 : 0.9)), C('normal'));
+      const pr = RF.vadd(P, RF.vscale(rf.kr, 7));
+      if (R > 0.002) pushSeg(st.refl, P, pr, fc('refl', R), fc('refl', R * 0.25));
+      const chain = [{ a: src, b: P, len: hit.t, n: 1, k: 'inc', pw: 1 }];
+      if (R > 0.002) addChain([{ a: src, b: P, len: hit.t, n: 1, k: 'inc', pw: 1 }, { a: P, b: pr, len: 7, n: 1, k: 'refl', pw: R }]);
+      // refracted wave inside the material, followed through internal bounces
+      let kin = RF.refractDir(dir, hit.n, 1, nRe);
+      let p = P, pw = T, absorbed = 0, exited = 0, inside = 0, thetaT = Math.acos(Math.min(1, Math.abs(RF.vdot(kin, hit.n)))) / D2R;
+      for (let bounce = 0; bounce < 4 && kin && pw > 0.004; bounce++) {
+        const h2 = RF.rayFirstHit([obj], RF.vadd(p, RF.vscale(kin, 1e-4)), kin, obj.radius * 3, null);
+        if (!h2) break;
+        const len = h2.t;
+        const att = Math.exp(-2 * mp.alpha * len);
+        pushSeg(st[bounce === 0 ? 'inside' : 'int'], p, h2.point, fc('inside', pw), fc('inside', pw * att));
+        chain.push({ a: p, b: h2.point, len, n: nRe, k: bounce === 0 ? 'inside' : 'int', pw });
+        if (isFol) for (let s = 1; s < 4; s++) {   // volume scattering along the path in the canopy
+          const q = RF.vlerp(p, h2.point, s / 4);
+          const d = RF.vnorm([rr() - 0.5, rr() - 0.5, rr() - 0.5]);
+          pushSeg(st.scat, q, RF.vadd(q, RF.vscale(d, 0.9)), fc('scat', 0.5));
+        }
+        absorbed += pw * (1 - att); pw *= att; inside += len;
+        const cosx = Math.abs(RF.vdot(kin, h2.n));
+        const fr = RF.fresnel(RF.medium(obj.mat, S.f), RF.AIR_MEDIUM, cosx);
+        const Rin = fr.tir ? 1 : (RF.cabs2(fr.gs) + RF.cabs2(fr.gp)) / 2;
+        const out = RF.refractDir(kin, h2.n, nRe, 1);
+        if (out && Rin < 1) {
+          if (pw * (1 - Rin) > 1e-3) {   // draw exiting rays that still carry > 0.1 % of the incident power
+            const ex = RF.vadd(h2.point, RF.vscale(out, 7));
+            pushSeg(st.exit, h2.point, ex, fc('exit', pw * (1 - Rin)), fc('exit', pw * (1 - Rin) * 0.3));
+            if (bounce === 0) addChain([...chain, { a: h2.point, b: ex, len: 7, n: 1, k: 'exit', pw: pw * (1 - Rin) }]);
+          }
+          exited += pw * (1 - Rin);
+        }
+        pw *= Rin;
+        kin = RF.reflectDir(kin, h2.n);
+        p = h2.point;
+      }
+      if (!isFol && a % 2 === 0 && b % 2 === 0) for (let s = 0; s < 4; s++) {     // diffuse scattering lobe (Lambertian, about the outward normal)
+        let d = RF.vnorm([rr() - 0.5, rr() - 0.5, rr() - 0.5]); if (RF.vdot(d, nOut) < 0) d = RF.vscale(d, -1);
+        const cosS = RF.vdot(d, nOut);
+        pushSeg(st.scat, P, RF.vadd(P, RF.vscale(d, 1.4 * cosS)), fadeCol(PROBE_COL.scat, 0.55 + 0.3 * (1 - cosS)));
+      }
+      stats.push({ center: a === 0 && b === 0, thetaI: rf.thetaDeg, thetaT, R, Rte: RF.cabs2(rf.gs), Rtm: RF.cabs2(rf.gp), T, inside, absorbedFrac: absorbed, exitFrac: exited, internalFrac: Math.max(0, T - absorbed - exited) });
+    }
+  }
+  for (const k in probeLines) setLines(probeLines[k], st[k].p, st[k].c);
+  if (stats.length) {
+    const cen = stats.find(s => s.center) || stats[0];
+    const avg = key => stats.reduce((s, x) => s + x[key], 0) / stats.length;
+    probe = { cen, n: stats.length, R: avg('R'), T: avg('T'), abs: avg('absorbedFrac'), exit: avg('exitFrac'), halfspace: !!cen.halfspace };
+  }
+  updateProbeInfo();
+}
+
+let ghosted = [];
+function ghost(mesh, op) { const m = mesh.material; m.transparent = true; m.opacity = op; m.depthWrite = false; m.needsUpdate = true; mesh.castShadow = false; ghosted.push(mesh); }
+function unghost() { for (const mesh of ghosted) { const m = mesh.material; m.transparent = false; m.opacity = 1; m.depthWrite = true; m.needsUpdate = true; mesh.castShadow = true; } ghosted = []; }
+function select(s) {
+  sel = s;
+  unghost();
+  if (s && s.type === 'tree') { const t = world.byId.get(s.id).item; if (s.part === 'trunk') { ghost(t.trunk, 0.55); ghost(t.foliageMesh, 0.18); } else ghost(t.foliageMesh, 0.4); }
+  if (s && s.type === 'rock') ghost(world.byId.get(s.id).item.mesh, 0.42);
+  if (S.fdtd) S.fdtd.running = false;
+  S.fdtd = null;
+  selRing.visible = false;
+  if (s) {
+    let pos = null, r = 1.5;
+    if (s.type === 'tree') { const t = world.byId.get(s.id).item; pos = [t.x, t.z]; r = s.part === 'foliage' ? t.R + 0.3 : 1.0; }
+    else if (s.type === 'rock') { const k = world.byId.get(s.id).item; pos = [k.x, k.z]; r = Math.max(k.sx, k.sz) + 0.4; }
+    else if (s.type === 'puddle') { const p = world.byId.get(s.id).item; pos = [p.x, p.z]; r = p.r + 0.2; }
+    else if (s.type === 'receiver') { const rx = world.receivers.find(q => q.id === s.id); pos = [rx.pos[0], rx.pos[2]]; r = 1.4; S.selRx = world.receivers.indexOf(rx); dirty = true; }
+    else if (s.type === 'interferer') { const it = world.interferers.find(q => q.id === s.id); pos = [it.pos[0], it.pos[2]]; r = 1.2; }
+    if (pos) { selRing.position.set(pos[0], 0.04, pos[1]); selRing.scale.setScalar(r); selRing.visible = true; }
+  }
+  probeDirty = true;
+  renderInspector();
+  if (world.receivers.length && world.receivers[0].last) updatePathVisuals();
+}
+
+// ---------- camera fly-to ----------
+let camTween = null;
+function flyTo(target, camPos) {
+  camTween = { t: 0, fT: controls.target.clone(), tT: new THREE.Vector3(...target), fP: camera.position.clone(), tP: new THREE.Vector3(...camPos) };
+}
+function selCenterRadius() {
+  if (!sel) return null;
+  if (sel.type === 'tree' || sel.type === 'rock') { const o = selRF(); return { c: o.center, r: o.kind === 'trunk' ? 1.6 : o.radius }; }
+  if (sel.type === 'puddle') { const p = world.byId.get(sel.id).item; return { c: [p.x, 0.5, p.z], r: p.r + 2 }; }
+  if (sel.type === 'receiver') { const rx = world.receivers.find(q => q.id === sel.id); return { c: rx.pos, r: 3 }; }
+  if (sel.type === 'interferer') { const it = world.interferers.find(q => q.id === sel.id); return { c: it.pos, r: 3 }; }
+  if (sel.type === 'drone') return { c: drone.pos, r: 4 };
+  if (sel.type === 'ground') { const rx = world.receivers[S.selRx]; const s = drone.pos[1] / (drone.pos[1] + rx.pos[1]); return { c: RF.vlerp(drone.pos, rx.pos, s), r: 6 }; }
+  return null;
+}
+function zoomToSelection() {
+  const cr = selCenterRadius(); if (!cr) return;
+  const c = cr.c.slice(); if (c[1] < 0.5) c[1] = 0.5;
+  // look across the drone -> object direction so that incident and outgoing rays are both visible
+  let k = [c[0] - drone.pos[0], 0, c[2] - drone.pos[2]]; if (RF.vlen(k) < 0.1) k = [1, 0, 0]; k = RF.vnorm(k);
+  const side = [-k[2], 0, k[0]];
+  const dist = Math.max(7, cr.r * 4.2);
+  // try both sides and two heights; keep the first camera spot with a clear view of the object
+  const own = sel.type === 'tree' ? sel.id : sel.id;
+  const others = world.rfObjects.filter(o => o.group !== own && o.id !== own);
+  const cands = [];
+  for (const h of [0.55, 1.1]) for (const sgn of [1, -1]) cands.push([c[0] + sgn * side[0] * dist - k[0] * dist * 0.35, c[1] + dist * h, c[2] + sgn * side[2] * dist - k[2] * dist * 0.35]);
+  const clear = cands.find(p => RF.segmentChords(others, p, c, null).length === 0) || cands[0];
+  flyTo(c, clear);
+}
+const HOME = { t: [0, 3, 0], p: [58, 52, 70] };
+
+// =================================================================================================
+// inspector
+// =================================================================================================
+function propCard(k, n) { return `<div class="prop"><div class="k">${k}</div><div class="n">${n}</div></div>`; }
+function materialPropsHTML(m) {
+  const p = RF.matProps(m, S.f);
+  const lam = RF.C0 / S.f;
+  const eps = `${fmt(p.epsC.re, 2)} − j${fmt(-p.epsC.im, 3)}`;
+  return `<div class="props">
+    ${propCard('Complex permittivity εc', eps)}
+    ${propCard('Refractive index n', `${fmt(p.n.re, 3)} − j${fmt(-p.n.im, 4)}`)}
+    ${propCard('Loss tangent tan δ', fmt(p.lossTan, 4))}
+    ${propCard('Attenuation α', `${fmt(p.dbPerM, p.dbPerM < 10 ? 2 : 1)} dB/m`)}
+    ${propCard('Skin depth δ (1/α)', isFinite(p.skinDepth) ? (p.skinDepth > 1 ? fmt(p.skinDepth, 2) + ' m' : fmt(p.skinDepth * 100, 1) + ' cm') : '∞')}
+    ${propCard('Wavelength inside', `${fmt(p.lambdaIn * 100, 2)} cm <span class="note">(air ${fmt(lam * 100, 1)})</span>`)}
+    ${propCard('Wave speed v/c', fmt(p.velocityFactor, 3))}
+    ${propCard('Impedance |η|', `${fmt(RF.cabs(p.eta), 1)} Ω`)}
+    ${propCard('Brewster angle', `${fmt(p.brewsterDeg, 1)}°`)}
+    ${propCard('Reflection at 0° (normal)', `${fmt(p.normalGamma * p.normalGamma * 100, 1)} % (${fmt(p.normalReflDb, 1)} dB)`)}
+  </div>`;
+}
+function materialEditor(m, presetKeys) {
+  const opts = presetKeys.map(k => `<option value="${k}" ${m.key === k ? 'selected' : ''}>${RF.MATERIALS[k].name}</option>`).join('');
+  return `<div class="f"><label>Material preset</label><select id="mPreset">${opts}</select></div>
+  <div class="grid2">
+    <div class="f"><label>εr <span class="v" id="mErV">${fmt(m.er, 2)}</span></label><input id="mEr" type="range" min="1" max="${Math.max(30, Math.ceil(m.er))}" step="0.05" value="${m.er}"></div>
+    <div class="f"><label>σ (S/m) <span class="v" id="mSgV">${m.sigma.toPrecision(3)}</span></label><input id="mSg" type="range" min="-5" max="0.5" step="0.05" value="${Math.log10(Math.max(m.sigma, 1e-5))}"></div>
+    <div class="f"><label>μr <span class="v" id="mMuV">${fmt(m.mur, 3)}</span></label><input id="mMu" type="range" min="1" max="1.2" step="0.005" value="${m.mur}"></div>
+    <div class="f"><label>Moisture <span class="v">${m.moisture} %</span></label><div class="note" style="padding-top:5px">${m.moisture > 30 ? 'high water content → high εr and loss' : 'low water content → low loss'}</div></div>
+  </div>`;
+}
+function bindMaterialEditor(m, onPreset) {
+  const upd = () => { $('mErV').textContent = fmt(m.er, 2); $('mSgV').textContent = m.sigma.toPrecision(3); $('mMuV').textContent = fmt(m.mur, 3); $('mProps').innerHTML = materialPropsHTML(m); dirty = true; probeDirty = true; drawFresnel(); if (S.fdtd) setupFdtd(); };
+  $('mEr').oninput = e => { m.er = +e.target.value; upd(); };
+  $('mSg').oninput = e => { m.sigma = Math.pow(10, +e.target.value); upd(); };
+  $('mMu').oninput = e => { m.mur = +e.target.value; upd(); };
+  $('mPreset').onchange = e => { const nm = RF.makeMaterial(e.target.value); onPreset(nm); renderInspector(); dirty = true; probeDirty = true; };
+}
+
+function renderInspector() {
+  const body = $('inspBody'), tag = $('inspTag');
+  if (!sel) {
+    tag.textContent = '';
+    const counts = `${world.trees.length} trees (${world.trees.length * 2} RF objects), ${world.rocks.length} rocks, ${world.puddles.length} puddles`;
+    body.innerHTML = `<div class="ititle">Nothing selected</div>
+      <div class="isub">Click an object in the 3D view. For trees, the trunk and the canopy are separate objects with separate materials.</div>
+      <div class="props">${propCard('Scene', counts)}${propCard('Mesh triangles traced', world.rfObjects.reduce((s, o) => s + o.nt, 0))}${propCard('Frequency', (S.f / 1e9).toFixed(3) + ' GHz')}${propCard('Wavelength', fmt(RF.C0 / S.f * 100, 1) + ' cm')}</div>
+      <div class="subh">What to try</div>
+      <div class="note">• Select a <b>rock</b>: the probe rays show reflection on the facet, a refracted ray bending toward the normal inside, absorption, and the exiting wave. The wave view solves Maxwell's equations through its cross-section.<br>• Select a <b>trunk</b>: live wood is very lossy, so almost nothing exits. Watch the diffraction paths that bend around it.<br>• Select a <b>canopy</b>: there is almost no reflection (εr ≈ 1.25). The wave passes through with gradual attenuation and volume scattering.<br>• Select the <b>ground or a puddle</b>: compare dry soil, wet soil and water reflection, and see the Brewster angle in vertical polarisation.<br>• Turn on <b>Penetration</b> off/on, add interferers, and switch the SNR between −10, 0 and +10 dB to see the effect on bearing error.</div>`;
+    return;
+  }
+  if (sel.type === 'receiver') return renderRxInspector();
+  if (sel.type === 'drone') return renderDroneInspector();
+  if (sel.type === 'interferer') return renderIntInspector();
+  // material objects
+  let title, sub, m, presets, onPreset, partSel = '', canFdtd = false;
+  if (sel.type === 'tree') {
+    const t = world.byId.get(sel.id).item;
+    const part = sel.part;
+    title = `${t.id} · ${t.type === 'pine' ? 'Conifer' : 'Broadleaf'} tree · ${part === 'trunk' ? 'trunk' : 'canopy'}`;
+    sub = `Height ${fmt(t.h, 1)} m · trunk radius ${fmt(t.trunkR * 100, 0)} cm · canopy radius ${fmt(t.R, 1)} m · position (${fmt(t.x, 1)}, ${fmt(t.z, 1)})`;
+    m = part === 'trunk' ? t.wood : t.foliage;
+    presets = part === 'trunk' ? ['wood_live', 'wood_dry'] : ['foliage', 'foliage_wet'];
+    onPreset = nm => { if (part === 'trunk') { t.wood = nm; t.rfTrunk.mat = nm; } else { t.foliage = nm; t.rfFoliage.mat = nm; } };
+    partSel = `<div class="seg"><button data-part="trunk" class="${part === 'trunk' ? 'on' : ''}">Trunk (wood)</button><button data-part="foliage" class="${part === 'foliage' ? 'on' : ''}">Canopy (foliage)</button></div>`;
+    canFdtd = true;
+  } else if (sel.type === 'rock') {
+    const k = world.byId.get(sel.id).item;
+    title = `${k.id} · Rock / boulder`;
+    sub = `Size ${fmt(k.sx * 2, 1)} × ${fmt(k.sy * 2, 1)} × ${fmt(k.sz * 2, 1)} m · ${k.rf.nt} facets · position (${fmt(k.x, 1)}, ${fmt(k.z, 1)})`;
+    m = k.mat; presets = ['granite', 'limestone', 'basalt', 'sandstone'];
+    onPreset = nm => { k.mat = nm; k.rf.mat = nm; k.mesh.material.color.set(ROCK_COL[nm.key] || '#999'); };
+    canFdtd = true;
+  } else if (sel.type === 'puddle') {
+    const p = world.byId.get(sel.id).item;
+    title = `${p.id} · Puddle (water surface)`; sub = `Radius ${fmt(p.r, 1)} m. Ground reflections landing inside it use water instead of soil.`;
+    m = p.mat; presets = ['water', 'soil_wet']; onPreset = nm => { p.mat = nm; };
+  } else {
+    title = 'Ground / soil half-space'; sub = 'Flat ground plane y = 0. It produces the ground-reflected path of every link (image method).';
+    m = world.groundMat; presets = ['soil_dry', 'soil_moist', 'soil_wet', 'ground_rocky'];
+    onPreset = nm => { setGroundMaterial(nm.key); $('groundMat').value = nm.key; };
+  }
+  tag.textContent = RF.MATERIALS[m.key] ? RF.MATERIALS[m.key].name : '';
+  const fd = S.fdtdCfg || (S.fdtdCfg = { view: 'field', quality: 'normal' });
+  body.innerHTML = `
+    <div><div class="ititle">${title}</div><div class="isub">${sub}</div></div>
+    ${partSel}
+    ${materialEditor(m, presets)}
+    <div id="mProps">${materialPropsHTML(m)}</div>
+    <div class="subh"><span>Drone wave → this object</span><span class="note" style="text-transform:none">probe rays shown in 3D</span></div>
+    <div class="blegend"><span><i style="background:${PROBE_COL.inc}"></i>incident</span><span><i style="background:${PROBE_COL.refl}"></i>reflected</span><span><i style="background:${PROBE_COL.inside}"></i>refracted inside</span><span><i style="background:${PROBE_COL.int}"></i>internal reflection</span><span><i style="background:${PROBE_COL.exit}"></i>exiting</span><span><i style="background:${PROBE_COL.scat}"></i>scattered</span><span><i style="background:${PROBE_COL.normal}"></i>surface normal</span></div>
+    <div id="probeInfo"></div>
+    <div class="subh"><span>Fresnel reflection vs angle</span></div>
+    <canvas id="fresnelCanvas"></canvas>
+    <div class="subh"><span>Propagation paths using this object</span></div>
+    <div id="objPaths" class="tablewrap"></div>
+    ${canFdtd ? `<div class="subh"><span>Wave view · 2D Maxwell FDTD</span><span><button id="fdRun" class="small primary">▶ Run</button> <button id="fdReset" class="small">↺</button></span></div>
+    <div class="row"><div class="seg"><button data-v="field" class="${fd.view === 'field' ? 'on' : ''}">Field Ez</button><button data-v="int" class="${fd.view === 'int' ? 'on' : ''}">Intensity</button></div>
+    <select id="fdQ" style="max-width:130px"><option value="fast" ${fd.quality === 'fast' ? 'selected' : ''}>Fast grid</option><option value="normal" ${fd.quality === 'normal' ? 'selected' : ''}>Normal grid</option><option value="fine" ${fd.quality === 'fine' ? 'selected' : ''}>Fine grid</option></select></div>
+    <div class="f"><label>Slice height <span class="v" id="fdYV"></span></label><input id="fdY" type="range" min="0" max="1" step="0.01" value="0.5"></div>
+    <canvas id="fdtdCanvas" width="420" height="420"></canvas>
+    <div class="note" id="fdInfo"></div>` : ''}
+  `;
+  bindMaterialEditor(m, onPreset);
+  body.querySelectorAll('[data-part]').forEach(b => b.onclick = () => select({ type: 'tree', id: sel.id, part: b.dataset.part }));
+  if (canFdtd) {
+    const obj = selRF();
+    const y0 = obj.bbMin[1] + 0.05, y1 = obj.bbMax[1] - 0.05;
+    const defY = Math.min(y1, Math.max(y0, obj.kind === 'rock' ? Math.max(0.3, obj.center[1]) : obj.kind === 'trunk' ? Math.min(drone.pos[1], y0 + (y1 - y0) * 0.5) : obj.center[1]));
+    S.fdtdY = defY;
+    const yi = $('fdY'); yi.min = y0.toFixed(2); yi.max = y1.toFixed(2); yi.value = defY.toFixed(2); $('fdYV').textContent = defY.toFixed(2) + ' m';
+    yi.oninput = e => { S.fdtdY = +e.target.value; $('fdYV').textContent = S.fdtdY.toFixed(2) + ' m'; setupFdtd(); };
+    $('fdRun').onclick = () => { if (!S.fdtd) setupFdtd(); S.fdtd.running = !S.fdtd.running; $('fdRun').textContent = S.fdtd.running ? '❚❚ Pause' : '▶ Run'; };
+    $('fdReset').onclick = () => { const was = S.fdtd && S.fdtd.running; setupFdtd(); S.fdtd.running = was; };
+    $('fdQ').onchange = e => { fd.quality = e.target.value; const was = S.fdtd && S.fdtd.running; setupFdtd(); S.fdtd.running = was; };
+    body.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { fd.view = b.dataset.v; body.querySelectorAll('[data-v]').forEach(x => x.classList.toggle('on', x === b)); drawFdtd(); });
+    setupFdtd(); S.fdtd.running = true; $('fdRun').textContent = '❚❚ Pause';
+  }
+  drawFresnel();
+  updateInspectorLive();
+}
+
+function updateProbeInfo() {
+  const box = $('probeInfo'); if (!box) return;
+  if (!probe) { box.innerHTML = '<div class="note">No probe ray hits this object from the drone position.</div>'; return; }
+  const c = probe.cen;
+  const pct = x => fmt(100 * x, 1) + ' %';
+  const bar = probe.halfspace
+    ? [[probe.R, PROBE_COL.refl, 'reflected'], [probe.abs, PROBE_COL.inside, 'absorbed in ground'], [Math.max(0, probe.T - probe.abs), '#c5d9cf', 'penetrates deeper']]
+    : [[probe.R, PROBE_COL.refl, 'reflected'], [probe.abs, PROBE_COL.inside, 'absorbed inside'], [probe.exit, PROBE_COL.exit, 'transmitted through'], [Math.max(0, 1 - probe.R - probe.abs - probe.exit), '#a5e4cf', 'trapped (internal reflections)']];
+  box.innerHTML = `
+    <div class="props">
+      ${propCard('Angle of incidence θi', fmt(c.thetaI, 1) + '°')}
+      ${propCard('Refraction angle θt (Snell)', fmt(c.thetaT, 1) + '°')}
+      ${propCard('|Γ|² TE (perpendicular)', pct(c.Rte))}
+      ${propCard('|Γ|² TM (parallel)', pct(c.Rtm))}
+      ${propCard('Reflected (actual polarisation)', pct(c.R))}
+      ${propCard('Path length inside', c.inside > 0 ? fmt(c.inside, 2) + ' m' : '—')}
+    </div>
+    <div class="note" style="margin:6px 0 3px">Energy budget averaged over ${probe.n} probe rays:</div>
+    <div class="budget">${bar.map(([v, col]) => `<div style="width:${Math.max(0, v * 100)}%;background:${col}"></div>`).join('')}</div>
+    <div class="blegend" style="margin-top:4px">${bar.map(([v, col, nm]) => `<span><i style="background:${col}"></i>${nm} ${pct(v)}</span>`).join('')}</div>`;
+  drawFresnel();
+}
+
+function objPathsHTML() {
+  const ids = new Set();
+  if (sel.type === 'tree') { ids.add(sel.id + '-trunk'); ids.add(sel.id + '-foliage'); }
+  else if (sel.type === 'rock') ids.add(sel.id);
+  else if (sel.type === 'puddle') ids.add(sel.id);
+  else ids.add('ground');
+  const rows = [];
+  for (const rx of world.receivers) {
+    if (!rx.last) continue;
+    const pmax = Math.max(...rx.last.paths.map(p => p.powerW));
+    for (const p of rx.last.paths) {
+      const hits = [...p.interactions.filter(i => ids.has(i.obj)).map(i => i.kind === 'transmit' ? `passes through (−${fmt(i.lossDb, 1)} dB)` : i.kind === 'reflect' ? `reflects at ${fmt(i.thetaDeg, 0)}°` : i.kind === 'diffract' ? `diffracts over ${i.edge} edge (−${fmt(i.lossDb, 1)} dB)` : 'scatters'),
+        ...p.crossings.filter(c => ids.has(c.obj.id) && p.type !== 'direct').map(c => `passes through (−${fmt(c.lossDb, 1)} dB)`)];
+      if (hits.length) rows.push({ rx: rx.id, p, how: [...new Set(hits)].join(', '), rel: RF.db10(p.powerW / pmax) });
+    }
+  }
+  if (!rows.length) return '<div class="note">This object is not on any traced path to a receiver right now. Move the drone or the object to bring it into a link.</div>';
+  rows.sort((a, b) => b.p.powerW - a.p.powerW);
+  return `<table class="ptable"><thead><tr><th>Rx</th><th>Mechanism</th><th>Interaction</th><th>Power</th><th>vs best</th></tr></thead><tbody>${rows.slice(0, 14).map(r =>
+    `<tr><td>${r.rx}</td><td><span class="sw" style="background:${TYPE_COL[visKey(r.p.type)]}"></span>${TYPE_NAME[r.p.type]}</td><td style="text-align:left;white-space:normal">${r.how}</td><td>${fmt(RF.wToDbm(r.p.powerW), 1)} dBm</td><td>${fmt(r.rel, 1)} dB</td></tr>`).join('')}</tbody></table>`;
+}
+
+function renderRxInspector() {
+  const rx = world.receivers.find(q => q.id === sel.id); if (!rx) return select(null);
+  $('inspTag').textContent = 'switched-beam receiver';
+  $('inspBody').innerHTML = `<div><div class="ititle">${rx.id} · ${S.nAnt}-beam switched directional array</div><div class="isub">One RF chain switches through ${S.nAnt} panel antennas (3 dB beamwidth ${fmt(rx.arr.bw, 0)}°, peak gain ${fmt(RF.db10(rx.arr.g0), 1)} dBi). Only beam <b>powers</b> are measured. PV-ML turns them into a bearing.</div></div>
+    <div class="grid2"><div class="f"><label>X (m)</label><input type="number" id="rxX" step="0.5" value="${rx.pos[0].toFixed(1)}"></div><div class="f"><label>Z (m)</label><input type="number" id="rxZ" step="0.5" value="${rx.pos[2].toFixed(1)}"></div></div>
+    <div id="rxLive"></div>`;
+  const apply = () => { rx.pos[0] = +$('rxX').value; rx.pos[2] = +$('rxZ').value; rx.group.position.set(rx.pos[0], 0, rx.pos[2]); selRing.position.set(rx.pos[0], 0.04, rx.pos[2]); dirty = true; };
+  $('rxX').onchange = apply; $('rxZ').onchange = apply;
+  updateInspectorLive();
+}
+function renderDroneInspector() {
+  $('inspTag').textContent = 'transmitter';
+  $('inspBody').innerHTML = `<div><div class="ititle">Drone (RF source)</div><div class="isub">Dipole-like antenna, gain 1.64·sin²ψ. It radiates in all directions. Every receiver captures its own set of propagation paths.</div></div><div id="drLive"></div>`;
+  updateInspectorLive();
+}
+function renderIntInspector() {
+  const it = world.interferers.find(q => q.id === sel.id); if (!it) return select(null);
+  $('inspTag').textContent = 'independent transmitter';
+  $('inspBody').innerHTML = `<div><div class="ititle">${it.id} · ${INT_TYPES[it.type].label}</div><div class="isub">Independent signal, not a reflection of the drone. Its power reaches every beam, raises the measured power floor and can pull the PV-ML bearing toward it. Edit its EIRP and channel in the left panel.</div></div><div id="intLive"></div>`;
+  updateInspectorLive();
+}
+
+function updateInspectorLive() {
+  if (!sel) return;
+  if (sel.type === 'receiver') {
+    const rx = world.receivers.find(q => q.id === sel.id); const box = $('rxLive'); if (!rx || !box || !rx.last) return;
+    const L = rx.last;
+    box.innerHTML = `<div class="props">${propCard('Link state', `<span class="badge b-${L.sum.state}">${L.sum.state}</span>`)}${propCard('Bearing error', fmt(L.err, 1) + '°')}${propCard('Received drone power', fmt(RF.wToDbm(L.sigW), 1) + ' dBm')}${propCard('Noise floor', fmt(RF.wToDbm(noiseW()), 1) + ' dBm')}${propCard('Rician K (direct / rest)', fmt(L.sum.kFactorDb, 1) + ' dB')}${propCard('RMS delay spread', fmt(L.sum.rmsDelayNs, 1) + ' ns')}</div>
+      <div class="subh">All propagation paths (${L.paths.length})</div>
+      <div class="tablewrap"><table class="ptable"><thead><tr><th>#</th><th>Mechanism</th><th>Via</th><th>Length</th><th>Delay</th><th>Power</th><th>AoA az/el</th></tr></thead><tbody>
+      ${L.paths.slice(0, 40).map((p, i) => `<tr><td>${i + 1}</td><td><span class="sw" style="background:${TYPE_COL[visKey(p.type)]}"></span>${TYPE_NAME[p.type]}${p.type === 'direct' && p.obstructed ? ' (obstructed)' : ''}</td><td style="text-align:left">${[...new Set(p.interactions.map(x => x.obj.replace('-trunk', ' trunk').replace('-foliage', ' canopy')))].join(', ') || '—'}</td><td>${fmt(p.length, 1)} m</td><td>${fmt(p.delay * 1e9, 1)} ns</td><td>${fmt(RF.wToDbm(p.powerW), 1)} dBm</td><td>${fmt(p.az, 0)}° / ${fmt(p.el, 0)}°</td></tr>`).join('')}
+      </tbody></table></div>`;
+  } else if (sel.type === 'drone') {
+    const box = $('drLive'); if (!box) return;
+    box.innerHTML = `<div class="props">${propCard('Position X / Y / Z', drone.pos.map(v => fmt(v, 1)).join(' / ') + ' m')}${propCard('Transmit power', fmt(RF.wToDbm(txPowerW()), 1) + ' dBm')}${propCard('Polarisation', S.pol === 'V' ? 'Vertical' : 'Horizontal')}${propCard('Frequency', (S.f / 1e9).toFixed(3) + ' GHz')}</div>
+      <table class="ptable"><thead><tr><th>Rx</th><th>Link</th><th>Distance</th><th>Power</th><th>SNR</th></tr></thead><tbody>${world.receivers.map(rx => rx.last ? `<tr><td>${rx.id}</td><td><span class="badge b-${rx.last.sum.state}">${rx.last.sum.state}</span></td><td>${fmt(RF.vdist(drone.pos, rx.pos), 1)} m</td><td>${fmt(RF.wToDbm(rx.last.sigW), 1)} dBm</td><td>${fmt(rx.last.snrDb, 1)} dB</td></tr>` : '').join('')}</tbody></table>`;
+  } else if (sel.type === 'interferer') {
+    const box = $('intLive'); if (!box) return;
+    box.innerHTML = `<table class="ptable"><thead><tr><th>Rx</th><th>Interference at Rx</th><th>SIR</th><th>SINR</th></tr></thead><tbody>${world.receivers.map(rx => {
+      if (!rx.last) return ''; const s = rx.last.isets.find(x => x.id === sel.id); if (!s) return `<tr><td>${rx.id}</td><td colspan="3">disabled</td></tr>`;
+      const w = s.paths.reduce((a, p) => a + p.powerW, 0) * s.rejection * s.rejection;
+      return `<tr><td>${rx.id}</td><td>${fmt(RF.wToDbm(w), 1)} dBm</td><td>${fmtDb(rx.last.sirDb)} dB</td><td>${fmt(rx.last.sinrDb, 1)} dB</td></tr>`; }).join('')}</tbody></table>`;
+  } else {
+    const box = $('objPaths'); if (box) box.innerHTML = objPathsHTML();
+  }
+}
+
+// ---------- Fresnel chart ----------
+function chartCtx(cv) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  g.font = '11px system-ui'; g.lineJoin = 'round';
+  return { g, w, h };
+}
+function axesFrame(g, x0, y0, x1, y1) { g.strokeStyle = '#d6d6cf'; g.lineWidth = 1; g.strokeRect(x0, y0, x1 - x0, y1 - y0); }
+function drawFresnel() {
+  const cv = $('fresnelCanvas'); if (!cv) return;
+  const m = selMaterial(); if (!m) return;
+  const { g, w, h } = chartCtx(cv);
+  const L = 34, R = 8, T = 10, B = 24;
+  const X = a => L + (w - L - R) * a / 90, Y = v => T + (h - T - B) * (1 - v);
+  axesFrame(g, L, T, w - R, h - B);
+  g.fillStyle = '#6c7176';
+  for (let a = 0; a <= 90; a += 15) { g.fillText(a + '°', X(a) - 8, h - 8); g.strokeStyle = '#eeeeea'; g.beginPath(); g.moveTo(X(a), T); g.lineTo(X(a), h - B); g.stroke(); }
+  for (let v = 0; v <= 1.001; v += 0.25) { g.fillText((v * 100).toFixed(0), 4, Y(v) + 4); g.strokeStyle = '#eeeeea'; g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(w - R, Y(v)); g.stroke(); }
+  const curve = (fn, col, dash) => { g.strokeStyle = col; g.lineWidth = 2; g.setLineDash(dash || []); g.beginPath(); for (let a = 0; a <= 90; a += 0.5) { const v = fn(a); a === 0 ? g.moveTo(X(a), Y(v)) : g.lineTo(X(a), Y(v)); } g.stroke(); g.setLineDash([]); };
+  const fr = a => RF.fresnelAirTo(m, S.f, Math.min(a, 89.95));
+  curve(a => RF.cabs2(fr(a).gs), '#1c6fd1');
+  curve(a => RF.cabs2(fr(a).gp), '#e8590c');
+  curve(a => 1 - (RF.cabs2(fr(a).gs) + RF.cabs2(fr(a).gp)) / 2, '#0b8f6a', [5, 4]);
+  const p = RF.matProps(m, S.f);
+  g.strokeStyle = '#999'; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(X(p.brewsterDeg), T); g.lineTo(X(p.brewsterDeg), h - B); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#777'; g.fillText('Brewster', X(p.brewsterDeg) - 46, h - B - 20);
+  if (probe) { const a = probe.cen.thetaI; g.strokeStyle = '#d99a00'; g.lineWidth = 2; g.beginPath(); g.moveTo(X(a), T); g.lineTo(X(a), h - B); g.stroke(); g.fillStyle = '#7a5600'; g.fillText('θi now', X(a) + 3, h - B - 6); }
+  g.fillStyle = '#1c6fd1'; g.fillText('|Γ|² TE', L + 6, T + 12); g.fillStyle = '#e8590c'; g.fillText('|Γ|² TM', L + 56, T + 12); g.fillStyle = '#0b8f6a'; g.fillText('transmitted (avg)', L + 110, T + 12);
+  g.fillStyle = '#6c7176'; g.save(); g.translate(10, (h - B) / 2 + 22); g.rotate(-Math.PI / 2); g.restore();
+}
+
+// =================================================================================================
+// 2-D FDTD wave view
+// =================================================================================================
+function setupFdtd() {
+  const cv = $('fdtdCanvas'); if (!cv) return;
+  const obj = selRF(); if (!obj) return;
+  const y = S.fdtdY;
+  const lam = RF.C0 / S.f;
+  const segSel = RF.sliceObject(obj, y);
+  const info = $('fdInfo');
+  if (!segSel.length) { S.fdtd = null; if (info) info.textContent = 'The slice height does not cut this object. Move the slider.'; const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height); return; }
+  let mnx = Infinity, mxx = -Infinity, mnz = Infinity, mxz = -Infinity;
+  for (const s of segSel) { mnx = Math.min(mnx, s[0], s[2]); mxx = Math.max(mxx, s[0], s[2]); mnz = Math.min(mnz, s[1], s[3]); mxz = Math.max(mxz, s[1], s[3]); }
+  let cx = (mnx + mxx) / 2, cz = (mnz + mxz) / 2;
+  const size = Math.max(mxx - mnx, mxz - mnz);
+  const q = (S.fdtdCfg || {}).quality || 'normal';
+  const NMAX = q === 'fast' ? 300 : q === 'fine' ? 720 : 470;
+  let kx = cx - drone.pos[0], kz = cz - drone.pos[2];
+  if (Math.hypot(kx, kz) < 0.3) { kx = 1; kz = 0; }
+  { const kl = Math.hypot(kx, kz); kx /= kl; kz /= kl; }
+  const Dfull = Math.max(size * 1.3 + 4 * lam, 10 * lam), Dmax = 26 * lam;
+  let D = Dfull, windowed = false;
+  if (Dfull > Dmax) {   // large object: zoom the solver window onto the face the wave enters
+    D = Dmax; windowed = true;
+    let best = null;
+    for (const sg of segSel) for (const [x, z] of [[sg[0], sg[1]], [sg[2], sg[3]]]) { const d = x * kx + z * kz; if (!best || d < best.d) best = { d, x, z }; }
+    cx = best.x + kx * D * 0.15; cz = best.z + kz * D * 0.15;
+  }
+  const mp = RF.matProps(obj.mat, S.f);
+  const npml = 18;
+  let dx = Math.min(lam / 14, mp.lambdaIn / 9);
+  let N = Math.ceil(D / dx) + 2 * npml;
+  let coarse = false;
+  if (N > NMAX) { N = NMAX; dx = D / (N - 2 * npml); coarse = true; }
+  const x0 = cx - N * dx / 2, z0 = cz - N * dx / 2;
+  const epsr = new Float32Array(N * N).fill(1), sigma = new Float32Array(N * N), mur = new Float32Array(N * N).fill(1);
+  const outlines = [];
+  const objs = world.rfObjects.filter(o => o.bbMin[1] <= y && o.bbMax[1] >= y && o.bbMax[0] >= x0 && o.bbMin[0] <= x0 + N * dx && o.bbMax[2] >= z0 && o.bbMin[2] <= z0 + N * dx);
+  objs.sort((a, b) => (a === obj) - (b === obj));          // selected object rasterised last
+  for (const o of objs) {
+    const segs = o === obj ? segSel : RF.sliceObject(o, y);
+    if (!segs.length) continue;
+    outlines.push({ segs, sel: o === obj });
+    let a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity;
+    for (const s of segs) { a0 = Math.min(a0, s[0], s[2]); a1 = Math.max(a1, s[0], s[2]); b0 = Math.min(b0, s[1], s[3]); b1 = Math.max(b1, s[1], s[3]); }
+    const i0 = Math.max(0, Math.floor((a0 - x0) / dx)), i1 = Math.min(N - 1, Math.ceil((a1 - x0) / dx));
+    const j0 = Math.max(0, Math.floor((b0 - z0) / dx)), j1 = Math.min(N - 1, Math.ceil((b1 - z0) / dx));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      if (RF.pointInSegs(x0 + (i + 0.5) * dx, z0 + (j + 0.5) * dx, segs)) { const id = j * N + i; epsr[id] = o.mat.er; sigma[id] = o.mat.sigma; mur[id] = o.mat.mur; }
+    }
+  }
+  const sim = new RF.FDTD2D({ N, dx, f: S.f, epsr, sigma, mur, propDirXZ: [kx, kz], npml });
+  S.fdtd = { sim, N, dx, x0, z0, outlines, running: S.fdtd ? S.fdtd.running : true, coarse, k: [kx, kz], peak: 0.3, mp, y, objName: obj.name };
+  const cellsAir = lam / dx, cellsIn = mp.lambdaIn / dx;
+  if (info) info.innerHTML = `2D TMz Yee FDTD: ${N}×${N} cells, dx = ${fmt(dx * 1000, 1)} mm (${fmt(cellsAir, 1)} cells/λ in air, ${fmt(cellsIn, 1)} cells/λ inside), dt = ${fmt(sim.dt * 1e12, 2)} ps. Domain ${fmt(N * dx, 2)} m × ${fmt(N * dx, 2)} m, horizontal slice at y = ${fmt(y, 2)} m through the real mesh${windowed ? ' (window centred on the illuminated face of this large object)' : ''}, ${outlines.length} object(s) in the domain, ${fmt(S.f / 1e9, 3)} GHz plane wave from the drone's direction, graded absorbing boundary.` +
+    (coarse || cellsIn < 6 ? ` <b style="color:var(--warn)">Grid is coarse for this material (${fmt(cellsIn, 1)} cells/λ). Treat the picture as qualitative, or choose a finer grid.</b>` : '') +
+    ` The 2D model treats objects as infinitely tall, so it shows the physics qualitatively in a cross-section. It is not a 3D full-scene solution.`;
+  drawFdtd();
+}
+const fdOff = document.createElement('canvas');
+function divCol(v) {      // diverging blue - white - red
+  const t = Math.max(-1, Math.min(1, v));
+  if (t >= 0) return [255 - 70 * t, 255 - 175 * t, 255 - 195 * t];
+  return [255 + 212 * t, 255 + 150 * t, 255 + 95 * t];
+}
+function seqCol(t) {      // white -> amber -> deep red -> near black
+  t = Math.max(0, Math.min(1, t));
+  const stops = [[255, 255, 255], [252, 211, 120], [226, 106, 50], [140, 30, 40], [40, 10, 25]];
+  const x = t * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(x)), f = x - i;
+  return stops[i].map((c, k) => c + (stops[i + 1][k] - c) * f);
+}
+function drawFdtd() {
+  const F = S.fdtd, cv = $('fdtdCanvas'); if (!F || !cv) return;
+  const N = F.N, sim = F.sim;
+  if (fdOff.width !== N) { fdOff.width = N; fdOff.height = N; }
+  const og = fdOff.getContext('2d');
+  const img = og.createImageData(N, N), d = img.data;
+  const view = (S.fdtdCfg || {}).view || 'field';
+  const np = sim.npml;
+  let mx = 1e-9;
+  if (view === 'field') { for (let j = np; j < N - np; j++) for (let i = np; i < N - np; i++) { const v = Math.abs(sim.Ez[j * N + i]); if (v > mx) mx = v; } F.peak = Math.max(mx, F.peak * 0.97); }
+  else { for (let j = np; j < N - np; j++) for (let i = np; i < N - np; i++) { const v = sim.Erms[j * N + i]; if (v > mx) mx = v; } }
+  const eps = sim.ca;  // not used for colour; materials drawn via outlines
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const id = j * N + i; let c;
+    if (view === 'field') c = divCol(sim.Ez[id] / (F.peak * 0.8));
+    else { const v = sim.Erms[id] / mx; const db = v > 0 ? 10 * Math.log10(v) : -40; c = seqCol(1 - Math.max(0, -db) / 30); c = c.map(x => 255 - (255 - x) * 1) ; const t = Math.max(0, Math.min(1, (db + 30) / 30)); c = seqCol(t); }
+    const o = id * 4; d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+  }
+  void eps;
+  og.putImageData(img, 0, 0);
+  const g = cv.getContext('2d');
+  const W = cv.width;
+  g.imageSmoothingEnabled = true;
+  g.clearRect(0, 0, W, W);
+  g.drawImage(fdOff, np, np, N - 2 * np, N - 2 * np, 0, 0, W, W);
+  const sc = W / ((N - 2 * np) * F.dx), ox = F.x0 + np * F.dx, oz = F.z0 + np * F.dx;
+  for (const o of F.outlines) {
+    g.strokeStyle = o.sel ? '#111' : '#555'; g.lineWidth = o.sel ? 1.6 : 1; g.setLineDash(o.sel ? [] : [3, 2]);
+    g.beginPath(); for (const s of o.segs) { g.moveTo((s[0] - ox) * sc, (s[1] - oz) * sc); g.lineTo((s[2] - ox) * sc, (s[3] - oz) * sc); } g.stroke();
+  }
+  g.setLineDash([]);
+  // incidence arrow + scale bar
+  const kl = Math.hypot(F.k[0], F.k[1]), kx = F.k[0] / kl, kz = F.k[1] / kl;
+  const ax = W / 2 - kx * W * 0.4, az = W / 2 - kz * W * 0.4;
+  g.strokeStyle = '#d99a00'; g.fillStyle = '#d99a00'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(ax, az); g.lineTo(ax + kx * 40, az + kz * 40); g.stroke();
+  g.beginPath(); g.moveTo(ax + kx * 48, az + kz * 48); g.lineTo(ax + kx * 36 - kz * 7, az + kz * 36 + kx * 7); g.lineTo(ax + kx * 36 + kz * 7, az + kz * 36 - kx * 7); g.fill();
+  const lam = RF.C0 / S.f, lpx = lam * sc;
+  g.fillStyle = '#ffffffd0'; g.fillRect(6, W - 26, Math.max(lpx, 30) + 60, 20);
+  g.strokeStyle = '#222'; g.lineWidth = 2; g.beginPath(); g.moveTo(10, W - 12); g.lineTo(10 + lpx, W - 12); g.stroke();
+  g.fillStyle = '#222'; g.font = '11px system-ui'; g.fillText('λ = ' + fmt(lam * 100, 1) + ' cm', 14 + lpx, W - 8);
+  g.fillStyle = '#ffffffd0'; g.fillRect(W - 120, 6, 114, 34);
+  g.fillStyle = '#222'; g.fillText((view === 'field' ? 'Ez snapshot' : 'time-avg |E|², dB') , W - 114, 19); g.fillText('t = ' + fmt(sim.t * 1e9, 2) + ' ns', W - 114, 33);
+}
+function stepFdtd() {
+  const F = S.fdtd; if (!F || !F.running || !$('fdtdCanvas')) return;
+  const t0 = performance.now();
+  let n = 0;
+  while (performance.now() - t0 < 11 && n < 40) { F.sim.step(1); n++; }
+  drawFdtd();
+}
+
+// =================================================================================================
+// results: localisation card, table, charts
+// =================================================================================================
+function renderResults() {
+  const rxs = world.receivers;
+  const tx = drone.pos;
+  const posErr = loc.valid ? Math.hypot(loc.x - tx[0], loc.z - tx[2]) : null;
+  const errs = rxs.map(r => Math.abs(r.last.err));
+  $('locCard').innerHTML = [
+    ['True drone X / Y / Z', tx.map(v => fmt(v, 1)).join(' / '), 'metres (ground truth)'],
+    ['Estimated X / Z', loc.valid ? `${fmt(loc.x, 1)} / ${fmt(loc.z, 1)}` : '—', loc.valid ? 'bearing-line WLS fix' : (rxs.length < 2 ? 'needs ≥ 2 receivers' : (loc.reason || 'no fix'))],
+    ['Horizontal error', posErr !== null ? fmt(posErr, 2) + ' m' : '—', loc.valid ? `1σ ellipse ${fmt(loc.ellipse.a, 1)} × ${fmt(loc.ellipse.b, 1)} m` : ''],
+    ['Mean |bearing error|', fmt(errs.reduce((a, b) => a + b, 0) / errs.length, 2) + '°', `over ${rxs.length} receiver${rxs.length > 1 ? 's' : ''}`],
+    ['Links LOS / OLOS / NLOS', ['LOS', 'OLOS', 'NLOS'].map(s => rxs.filter(r => r.last.sum.state === s).length).join(' / '), 'OLOS = foliage only'],
+    ['Transmit / noise', `${fmt(RF.wToDbm(txPowerW()), 1)} / ${fmt(RF.wToDbm(noiseW()), 1)}`, 'dBm'],
+  ].map(([k, n, s]) => `<div class="kpi"><div class="k">${k}</div><div class="n">${n}</div><div class="s">${s}</div></div>`).join('');
+  $('locNote').textContent = 'Altitude is not estimated (the arrays are azimuth-only)';
+  const tb = $('rxTable').querySelector('tbody');
+  tb.innerHTML = rxs.map((r, i) => {
+    const L = r.last; const st = L.sum.strongest;
+    return `<tr data-i="${i}" class="${i === S.selRx ? 'sel' : ''}"><td><b>${r.id}</b></td><td><span class="badge b-${L.sum.state}">${L.sum.state}</span></td><td>${fmt(L.trueAz, 1)}°</td><td>${fmt(L.est.theta, 1)}°</td><td>${fmt(L.track.angle, 1)}°</td><td style="color:${Math.abs(L.err) > 10 ? 'var(--bad)' : Math.abs(L.err) > 4 ? 'var(--warn)' : 'var(--good)'}">${L.err > 0 ? '+' : ''}${fmt(L.err, 1)}°</td><td>${fmt(L.est.sigma, 1)}°</td><td>${fmt(L.snrDb, 1)}</td><td>${fmtDb(L.sirDb)}</td><td>${fmt(L.sinrDb, 1)}</td><td>${L.sum.nPaths}</td><td style="text-align:left"><span class="sw" style="background:${TYPE_COL[visKey(st.type)]}"></span>${TYPE_NAME[st.type]}</td><td>${fmt(L.sum.kFactorDb, 1)}</td><td>${fmt(L.sum.rmsDelayNs, 0)} ns</td></tr>`;
+  }).join('');
+  tb.querySelectorAll('tr').forEach(tr => tr.onclick = () => { S.selRx = +tr.dataset.i; dirty = true; });
+  $('chartRx').textContent = rxs[S.selRx] ? rxs[S.selRx].id : '';
+  drawBeamChart(); drawHistChart(); drawPdpChart();
+  renderHud();
+}
+function renderHud() {
+  const sp = Math.hypot(drone.pos[0] - drone.prevPos[0], drone.pos[2] - drone.prevPos[2]);
+  void sp;
+  $('hud').innerHTML = `<span class="chip">t = ${fmt(S.t, 1)} s</span><span class="chip">Drone (${drone.pos.map(v => fmt(v, 1)).join(', ')}) m</span><span class="chip">${(S.f / 1e9).toFixed(3)} GHz · λ ${fmt(RF.C0 / S.f * 100, 1)} cm</span><span class="chip">${S.snrMode === 'ref' ? 'Ref SNR ' + S.refSnr + ' dB' : 'Tx ' + S.txDbm + ' dBm'}</span>${world.interferers.filter(i => i.on).length ? `<span class="chip" style="color:#a61e4d">${world.interferers.filter(i => i.on).length} interferer(s)</span>` : ''}`;
+}
+
+function drawBeamChart() {
+  const rx = world.receivers[S.selRx]; const cv = $('beamChart'); if (!rx || !rx.last) return;
+  const { g, w, h } = chartCtx(cv);
+  const L = 34, R = 36, T = 20, B = 22;
+  const X = a => L + (w - L - R) * a / 360, Y = v => T + (h - T - B) * (-v / 40);
+  axesFrame(g, L, T, w - R, h - B);
+  g.fillStyle = '#6c7176';
+  for (let a = 0; a <= 360; a += 60) { g.fillText(a + '°', X(a) - 9, h - 7); g.strokeStyle = '#efefea'; g.beginPath(); g.moveTo(X(a), T); g.lineTo(X(a), h - B); g.stroke(); }
+  for (let v = 0; v >= -40; v -= 10) g.fillText(v, 8, Y(v) + 4);
+  const Ld = rx.last;
+  // bars: measured beam power in dB above noise (right axis 0..maxP)
+  const pdb = Array.from(Ld.meas, v => RF.db10(v));
+  const pmax = Math.max(10, Math.ceil(Math.max(...pdb) / 10) * 10);
+  const Yp = v => T + (h - T - B) * (1 - Math.max(0, v) / pmax);
+  const bwpx = (w - L - R) / rx.arr.n * 0.45;
+  g.fillStyle = '#1f6f8b33'; g.strokeStyle = '#1f6f8b88';
+  rx.arr.boresights.forEach((b, i) => { const x = X(b); g.fillRect(x - bwpx / 2, Yp(pdb[i]), bwpx, h - B - Yp(pdb[i])); g.strokeRect(x - bwpx / 2, Yp(pdb[i]), bwpx, h - B - Yp(pdb[i])); });
+  g.fillStyle = '#1f6f8b'; for (let v = 0; v <= pmax; v += pmax / 4) g.fillText(v.toFixed(0), w - R + 4, Yp(v) + 4);
+  const line = (arr, col, dash) => { if (!arr) return; g.strokeStyle = col; g.lineWidth = 1.8; g.setLineDash(dash || []); g.beginPath(); for (let a = 0; a < 360; a++) { const v = Math.max(-40, arr[a]); a === 0 ? g.moveTo(X(a), Y(v)) : g.lineTo(X(a), Y(v)); } g.stroke(); g.setLineDash([]); };
+  line(Ld.est.spectrum, '#1f6f8b');
+  if (Ld.spec) { line(Ld.spec.bartlett, '#868e96', [4, 3]); line(Ld.spec.music, '#c2255c'); }
+  const vline = (a, col, dash, lw) => { g.strokeStyle = col; g.lineWidth = lw || 2; g.setLineDash(dash || []); g.beginPath(); g.moveTo(X(a), T); g.lineTo(X(a), h - B); g.stroke(); g.setLineDash([]); };
+  vline(Ld.trueAz, '#d99a00', [], 2.4); vline(Ld.est.theta, '#1f6f8b', [5, 3]); vline(Ld.track.angle, '#7048e8', [2, 3]);
+  // path arrival ticks
+  const pm = Math.max(...Ld.paths.map(p => p.powerW));
+  for (const p of Ld.paths) { const rel = RF.db10(p.powerW / pm); if (rel < -40) continue; const hh = 3 + 12 * (1 + rel / 40); g.fillStyle = TYPE_COL[visKey(p.type)]; g.fillRect(X(p.az) - 1, T - hh - 1, 2.5, hh); }
+  for (const s of Ld.isets) for (const p of s.paths) { if (p.type !== 'direct') continue; g.fillStyle = TYPE_COL.interf; g.beginPath(); g.moveTo(X(p.az), T - 2); g.lineTo(X(p.az) - 4, T - 10); g.lineTo(X(p.az) + 4, T - 10); g.fill(); }
+  g.font = '10.5px system-ui';
+  const lg = [['PV-ML', '#1f6f8b'], ['MUSIC', '#c2255c'], ['Bartlett', '#868e96'], ['true', '#d99a00'], ['tracked', '#7048e8']];
+  let lx = L + 6; for (const [n, c] of lg) { g.fillStyle = c; g.fillRect(lx, T + 6, 10, 3); g.fillStyle = '#444'; g.fillText(n, lx + 13, T + 11); lx += g.measureText(n).width + 24; }
+}
+function drawHistChart() {
+  const rx = world.receivers[S.selRx]; const cv = $('histChart'); if (!rx) return;
+  const { g, w, h } = chartCtx(cv);
+  const L = 34, R = 8, T = 10, B = 22;
+  const H = rx.hist; const tmax = H.length ? Math.max(H[H.length - 1].t, 10) : 10, tmin = Math.max(0, tmax - 60), span = Math.max(tmax - tmin, 1e-3);
+  const X = t => L + (w - L - R) * (t - tmin) / span, Y = a => T + (h - T - B) * (1 - a / 360);
+  axesFrame(g, L, T, w - R, h - B);
+  g.fillStyle = '#6c7176';
+  for (let a = 0; a <= 360; a += 90) { g.fillText(a + '°', 4, Y(a) + 4); g.strokeStyle = '#efefea'; g.beginPath(); g.moveTo(L, Y(a)); g.lineTo(w - R, Y(a)); g.stroke(); }
+  for (let t = Math.ceil(tmin / 10) * 10; t <= tmax; t += 10) g.fillText(t.toFixed(0) + 's', X(t) - 8, h - 7);
+  const plot = (key, col, dots) => {
+    g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 1.8; g.beginPath(); let prev = null;
+    for (const p of H) { if (p.t < tmin) continue; const x = X(p.t), y = Y(p[key]); if (dots) { g.fillRect(x - 1.2, y - 1.2, 2.4, 2.4); continue; } if (prev !== null && Math.abs(p[key] - prev) < 180) g.lineTo(x, y); else g.moveTo(x, y); prev = p[key]; }
+    if (!dots) g.stroke();
+  };
+  plot('tr', '#d99a00'); plot('est', '#1f6f8b', true); plot('trk', '#7048e8');
+  g.font = '10.5px system-ui';
+  let lx = L + 6; for (const [n, c] of [['true', '#d99a00'], ['PV-ML raw', '#1f6f8b'], ['tracked', '#7048e8']]) { g.fillStyle = c; g.fillRect(lx, T + 6, 10, 3); g.fillStyle = '#444'; g.fillText(n, lx + 13, T + 11); lx += g.measureText(n).width + 24; }
+  if (H.length > 5) {
+    const recent = H.slice(-40); const rm = Math.sqrt(recent.reduce((s, p) => s + RF.wrap180(p.est - p.tr) ** 2, 0) / recent.length);
+    const rt = Math.sqrt(recent.reduce((s, p) => s + RF.wrap180(p.trk - p.tr) ** 2, 0) / recent.length);
+    g.fillStyle = '#444'; g.fillStyle = '#ffffffd8'; g.fillRect(w - R - 196, T + 18, 192, 16); g.fillStyle = '#444'; g.fillText(`RMSE (10 s): raw ${fmt(rm, 1)}°, tracked ${fmt(rt, 1)}°`, w - R - 192, T + 30);
+  }
+}
+function drawPdpChart() {
+  const rx = world.receivers[S.selRx]; const cv = $('pdpChart'); if (!rx || !rx.last) return;
+  const { g, w, h } = chartCtx(cv);
+  const L = 40, R = 8, T = 10, B = 22;
+  const P = rx.last.paths;
+  const pmax = Math.max(...P.map(p => RF.wToDbm(p.powerW)));
+  const top = Math.ceil(pmax / 10) * 10, bot = top - 60;
+  const d0 = Math.min(...P.map(p => p.delay)) * 1e9, d1 = Math.max(...P.map(p => p.delay)) * 1e9;
+  const span = Math.max(20, d1 - d0) * 1.1;
+  const t0 = Math.floor(d0 / 10) * 10;
+  const X = t => L + (w - L - R) * (t - t0) / span, Y = v => T + (h - T - B) * (top - v) / 60;
+  axesFrame(g, L, T, w - R, h - B);
+  g.fillStyle = '#6c7176';
+  for (let v = top; v >= bot; v -= 20) { g.fillText(v, 6, Y(v) + 4); g.strokeStyle = '#efefea'; g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(w - R, Y(v)); g.stroke(); }
+  const stepT = span > 200 ? 100 : span > 80 ? 20 : 10;
+  for (let t = t0; t <= t0 + span; t += stepT) g.fillText(t.toFixed(0) + ' ns', X(t) - 12, h - 7);
+  for (const p of [...P].reverse()) {
+    const x = X(p.delay * 1e9), y = Y(Math.max(bot, RF.wToDbm(p.powerW)));
+    g.strokeStyle = TYPE_COL[visKey(p.type)]; g.lineWidth = p.type === 'direct' ? 2.6 : 1.6;
+    g.beginPath(); g.moveTo(x, h - B); g.lineTo(x, y); g.stroke();
+    g.fillStyle = TYPE_COL[visKey(p.type)]; g.beginPath(); g.arc(x, y, p.type === 'direct' ? 3.4 : 2.4, 0, Math.PI * 2); g.fill();
+  }
+  g.fillStyle = '#444'; g.font = '10.5px system-ui';
+  g.fillText(`τrms = ${fmt(rx.last.sum.rmsDelayNs, 1)} ns · ${P.length} paths · dBm`, L + 6, T + 12);
+}
+
+// =================================================================================================
+// coverage map
+// =================================================================================================
+let covMesh = null, covBusy = false;
+function covColor(t) {      // perceptual-ish: dark blue -> teal -> yellow
+  const stops = [[38, 40, 110], [33, 120, 160], [70, 180, 120], [245, 215, 70]];
+  t = Math.max(0, Math.min(1, t)); const x = t * 3, i = Math.min(2, Math.floor(x)), f = x - i;
+  return stops[i].map((c, k) => Math.round(c + (stops[i + 1][k] - c) * f));
+}
+async function computeCoverage() {
+  if (covBusy) return; covBusy = true;
+  const G = 110, half = 58, h = S.covH;
+  buildEnv();
+  const env2 = RF.makeEnv(Object.assign({}, env, { en: { direct: true, penetration: S.en.penetration, ground: S.en.ground, specular: false, second: false, diffraction: S.en.diffraction, diffuse: false } }));
+  const tx = droneTx();
+  const vals = new Float32Array(G * G);
+  for (let j = 0; j < G; j++) {
+    for (let i = 0; i < G; i++) {
+      const p = [-half + (i + 0.5) * 2 * half / G, h, -half + (j + 0.5) * 2 * half / G];
+      const paths = RF.tracePaths(env2, tx, { pos: p, pol: S.pol });
+      let c = RF.C(0); for (const q of paths) if (q.coherent) c = RF.cadd(c, q.amp);
+      vals[j * G + i] = RF.wToDbm(Math.max(RF.cabs2(c), 1e-25));
+    }
+    if (j % 6 === 0) { $('covStatus').textContent = `Computing… ${Math.round(100 * j / G)} %`; await new Promise(r => setTimeout(r, 0)); }
+  }
+  let mx = -Infinity; for (const v of vals) mx = Math.max(mx, v);
+  const mn = mx - 50;
+  const c = document.createElement('canvas'); c.width = c.height = G;
+  const g = c.getContext('2d'); const img = g.createImageData(G, G);
+  for (let k = 0; k < G * G; k++) { const col = covColor((vals[k] - mn) / 50); img.data[k * 4] = col[0]; img.data[k * 4 + 1] = col[1]; img.data[k * 4 + 2] = col[2]; img.data[k * 4 + 3] = 255; }
+  g.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  if (covMesh) disposeObj(covMesh);
+  covMesh = new THREE.Mesh(new THREE.PlaneGeometry(2 * half, 2 * half), new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.72, depthWrite: false }));
+  covMesh.rotation.x = -Math.PI / 2; covMesh.position.y = Math.min(h, 0.06); covMesh.renderOrder = 0;
+  scene.add(covMesh);
+  const bar = $('covBar').getContext('2d'); for (let x = 0; x < 170; x++) { const col = covColor(x / 169); bar.fillStyle = `rgb(${col})`; bar.fillRect(x, 0, 1, 10); }
+  $('covMin').textContent = fmt(mn, 0) + ' dBm'; $('covMax').textContent = fmt(mx, 0) + ' dBm';
+  $('covTitle').textContent = `Received power at y = ${h} m (drone at ${tx.pos.map(v => fmt(v, 0)).join(', ')})`;
+  $('covLegend').style.display = 'block';
+  $('covStatus').textContent = `Map computed from ${G * G} coherent ray traces. Shadows behind rocks and trunks, and ground-reflection interference fringes, are visible. It is a snapshot: compute again after moving the drone.`;
+  covBusy = false;
+}
+
+// =================================================================================================
+// picking & dragging
+// =================================================================================================
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let drag = null, downPos = null;
+function pickables() {
+  const arr = [groundMesh, drone.group];
+  for (const t of world.trees) arr.push(t.group);
+  for (const k of world.rocks) arr.push(k.mesh);
+  for (const p of world.puddles) arr.push(p.mesh);
+  for (const r of world.receivers) arr.push(r.group);
+  for (const i of world.interferers) arr.push(i.group);
+  return arr;
+}
+function setPointer(e) { const r = renderer.domElement.getBoundingClientRect(); pointer.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); }
+function planeHit(y) { const pl = new THREE.Plane(new THREE.Vector3(0, 1, 0), -y); const v = new THREE.Vector3(); return raycaster.ray.intersectPlane(pl, v) ? v : null; }
+renderer.domElement.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+  setPointer(e); raycaster.setFromCamera(pointer, camera);
+  downPos = [e.clientX, e.clientY];
+  const hits = raycaster.intersectObjects(pickables(), true);
+  const hit = hits.find(h => h.object.userData.pick);
+  if (!hit) return;
+  const pk = hit.object.userData.pick;
+  if (pk.type === 'puddle' && hits[0].object !== hit.object && hits[0].object.userData.pick && hits[0].object.userData.pick.type !== 'ground') return;
+  if (pk.type === 'ground') { drag = { pk, ground: true }; return; }
+  const y = pk.type === 'drone' ? drone.pos[1] : pk.type === 'interferer' && world.interferers.find(i => i.id === pk.id).type === 'drone2' ? world.interferers.find(i => i.id === pk.id).pos[1] : 0;
+  const p = planeHit(y);
+  drag = { pk, y, start: p, moved: false };
+  controls.enabled = false;
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!drag || drag.ground) return;
+  setPointer(e); raycaster.setFromCamera(pointer, camera);
+  const p = planeHit(drag.y); if (!p) return;
+  if (!drag.moved && downPos && Math.hypot(e.clientX - downPos[0], e.clientY - downPos[1]) < 4) return;
+  drag.moved = true;
+  const x = Math.max(-75, Math.min(75, p.x)), z = Math.max(-75, Math.min(75, p.z));
+  const pk = drag.pk;
+  if (pk.type === 'drone') { S.flight = 'hover'; $('flight').value = 'hover'; S.droneManual = [x, S.alt, z]; }
+  else if (pk.type === 'receiver') { const rx = world.receivers.find(q => q.id === pk.id); rx.pos[0] = x; rx.pos[2] = z; rx.group.position.set(x, 0, z); }
+  else if (pk.type === 'interferer') { const it = world.interferers.find(q => q.id === pk.id); it.pos[0] = x; it.pos[2] = z; it.group.position.x = x; it.group.position.z = z; }
+  else if (pk.type === 'tree') { const t = world.byId.get(pk.id).item; t.x = x; t.z = z; t.group.position.set(x, 0, z); }
+  else if (pk.type === 'rock') { const k = world.byId.get(pk.id).item; k.x = x; k.z = z; k.mesh.position.x = x; k.mesh.position.z = z; }
+  else if (pk.type === 'puddle') { const q = world.byId.get(pk.id).item; q.x = x; q.z = z; q.mesh.position.x = x; q.mesh.position.z = z; }
+  if (sel && sel.id === pk.id) selRing.position.set(x, 0.04, z);
+  drag.needsRF = pk.type === 'tree' || pk.type === 'rock';
+  dirty = true; probeDirty = true;
+});
+window.addEventListener('pointerup', e => {
+  if (!drag) return;
+  const d = drag; drag = null; controls.enabled = true;
+  const click = downPos && Math.hypot(e.clientX - downPos[0], e.clientY - downPos[1]) < 4;
+  if (d.needsRF) {
+    const item = world.byId.get(d.pk.id).item; scene.updateMatrixWorld(true); rebuildRF(item); collectRF();
+    if (S.fdtd) setupFdtd();
+  }
+  if (click || d.moved) {
+    if (d.ground) { if (click) select({ type: 'ground', id: 'ground' }); }
+    else select(d.pk);
+  }
+});
+
+// =================================================================================================
+// legend
+// =================================================================================================
+(function legend() {
+  const items = [['direct', 'Direct (free space)', TYPE_COL.direct], ['obs', 'Inside an object', TYPE_COL.obs], ['ground', 'Ground reflection', TYPE_COL.ground], ['specular', 'Rock / trunk reflection', TYPE_COL.specular], ['second', '2-bounce', TYPE_COL.second], ['diffraction', 'Diffraction', TYPE_COL.diffraction], ['scatter', 'Diffuse scatter', TYPE_COL.scatter], ['interf', 'Interferer paths', TYPE_COL.interf], ['bearing', 'PV-ML / tracked bearing', '#1f6f8b']];
+  $('legend').innerHTML = items.map(([k, n, c]) => `<span class="lg" data-k="${k}"><i style="background:${c}"></i>${n}</span>`).join('');
+  $('legend').querySelectorAll('.lg').forEach(el => el.onclick = () => {
+    const k = el.dataset.k;
+    if (k === 'obs') return;
+    if (k === 'bearing') { bearingLines.visible = !bearingLines.visible; el.classList.toggle('off', !bearingLines.visible); return; }
+    S.typeVis[k] = !S.typeVis[k]; el.classList.toggle('off', !S.typeVis[k]); updatePathVisuals();
+  });
+})();
+
+// =================================================================================================
+// controls wiring
+// =================================================================================================
+function bindRange(id, fmtFn, apply) {
+  const el = $(id), v = $(id + 'V');
+  const f = () => { const x = +el.value; if (v) v.textContent = fmtFn(x); apply(x); };
+  el.addEventListener('input', f); f();
+}
+bindRange('groundRough', x => x.toFixed(1) + ' cm', x => { S.groundRough = x / 100; dirty = true; probeDirty = true; });
+$('groundMat').onchange = e => { setGroundMaterial(e.target.value); if (sel && sel.type === 'ground') renderInspector(); };
+$('puddles').onchange = e => { S.puddlesOn = e.target.checked; dirty = true; };
+$('flight').onchange = e => { S.flight = e.target.value; if (S.flight === 'hover') S.droneManual = drone.pos.slice(); dirty = true; };
+bindRange('speed', x => x + ' m/s', x => { S.speed = x; });
+bindRange('alt', x => x + ' m', x => { S.alt = x; dirty = true; });
+bindRange('heading', x => x + '°', x => { S.heading = x; dirty = true; });
+bindRange('orbitR', x => x + ' m', x => { S.orbitR = x; dirty = true; });
+$('pol').onchange = e => { S.pol = e.target.value; dirty = true; probeDirty = true; };
+$('freq').onchange = e => { S.f = +e.target.value; dirty = true; probeDirty = true; if (sel) renderInspector(); };
+$('snrMode').onchange = e => { S.snrMode = e.target.value; $('refSnrBox').style.display = S.snrMode === 'ref' ? '' : 'none'; $('txBox').style.display = S.snrMode === 'ref' ? 'none' : ''; dirty = true; };
+bindRange('refSnr', x => (x > 0 ? '+' : '') + x + ' dB', x => { S.refSnr = x; document.querySelectorAll('.snrp').forEach(b => b.classList.toggle('on', +b.dataset.v === x)); dirty = true; });
+document.querySelectorAll('.snrp').forEach(b => b.onclick = () => { $('refSnr').value = b.dataset.v; $('refSnr').dispatchEvent(new Event('input')); });
+bindRange('txDbm', x => x + ' dBm', x => { S.txDbm = x; dirty = true; });
+bindRange('bw', x => x + ' MHz', x => { S.bwMHz = x; dirty = true; });
+bindRange('nf', x => x + ' dB', x => { S.nf = x; dirty = true; });
+bindRange('L', x => String(x), x => { S.L = x; dirty = true; });
+$('addRx').onclick = () => addReceiver();
+$('removeRx').onclick = () => removeReceiver();
+bindRange('nAnt', x => String(x), x => { if (S.nAnt !== x) { S.nAnt = x; rebuildArrays(); } });
+bindRange('mastH', x => x.toFixed(1) + ' m', x => { if (S.mastH !== x) { S.mastH = x; for (const rx of world.receivers) { rx.pos[1] = x; buildReceiverModel(rx); } dirty = true; } });
+$('useTracked').onchange = e => { S.useTracked = e.target.checked; dirty = true; };
+$('decor').onchange = e => { S.decorrelate = e.target.checked; dirty = true; };
+$('addWifi').onclick = () => addInterferer('wifi');
+$('addCtrl').onclick = () => addInterferer('ctrl');
+$('addDrone2').onclick = () => addInterferer('drone2');
+for (const k of Object.keys(S.en)) $('en-' + k).onchange = e => { S.en[k] = e.target.checked; dirty = true; };
+bindRange('scatterS', x => x.toFixed(2), x => { S.scatterS = x; dirty = true; });
+$('showAll').onchange = e => { S.showAll = e.target.checked; updatePathVisuals(); };
+bindRange('minRel', x => '−' + x + ' dB', x => { S.minRel = x; if (world.receivers.length && world.receivers[0].last) updatePathVisuals(); });
+$('showParticles').onchange = e => { S.particles = e.target.checked; packets.visible = S.particles; updatePathVisuals(); };
+$('showWave').onchange = e => { S.wave = e.target.checked; };
+$('showRose').onchange = e => { S.rose = e.target.checked; updateRoses(); };
+$('showLabels').onchange = e => { S.labels = e.target.checked; labelRenderer.domElement.style.display = S.labels ? '' : 'none'; };
+bindRange('covH', x => x.toFixed(1) + ' m', x => { S.covH = x; });
+$('covRun').onclick = () => computeCoverage();
+$('covClear').onclick = () => { if (covMesh) { disposeObj(covMesh); covMesh = null; } $('covLegend').style.display = 'none'; };
+$('play').onclick = () => { S.playing = !S.playing; $('play').textContent = S.playing ? '❚❚ Pause' : '▶ Play'; };
+$('resetSim').onclick = () => { S.t = 0; logRows = []; for (const rx of world.receivers) { rx.tracker.reset(); rx.hist = []; } dirty = true; };
+$('preset').onchange = e => applyPreset(e.target.value);
+$('rebuild').onclick = () => { S.seed = Math.max(1, Math.floor(+$('seed').value || 1)); buildEnvironment(); renderInspector(); };
+$('zoomSel').onclick = () => zoomToSelection();
+$('overview').onclick = () => flyTo(HOME.t, HOME.p);
+$('hideHint').onclick = () => { const h = $('hint'); h.style.display = h.style.display === 'none' ? '' : 'none'; };
+renderer.domElement.addEventListener('dblclick', () => { if (sel) zoomToSelection(); });
+$('helpBtn').onclick = () => $('help').classList.add('on');
+$('helpClose').onclick = () => $('help').classList.remove('on');
+$('help').onclick = e => { if (e.target.id === 'help') $('help').classList.remove('on'); };
+function applyPreset(key) {
+  S.preset = key; const P = PRESETS[key];
+  $('groundMat').value = P.ground; setGroundMaterial(P.ground);
+  S.alt = P.alt; $('alt').value = P.alt; $('altV').textContent = P.alt + ' m';
+  S.flight = P.flight; $('flight').value = P.flight;
+  buildEnvironment();
+  for (const rx of world.receivers) { rx.tracker.reset(); rx.hist = []; }
+  renderInspector();
+}
+
+// =================================================================================================
+// export
+// =================================================================================================
+function pathRows() {
+  const rows = [];
+  for (const rx of world.receivers) {
+    if (!rx.last) continue;
+    rx.last.paths.forEach((p, i) => rows.push({
+      time_s: +S.t.toFixed(2), receiver: rx.id, path: i + 1, mechanism: TYPE_NAME[p.type], coherent: p.coherent ? 'yes' : 'no (diffuse)',
+      via: [...new Set(p.interactions.map(x => x.obj))].join(' '), length_m: +p.length.toFixed(3), delay_ns: +(p.delay * 1e9).toFixed(3),
+      power_dbm: +RF.wToDbm(p.powerW).toFixed(2), phase_deg: +(RF.carg(p.amp) * 180 / Math.PI).toFixed(1), aoa_az_deg: +p.az.toFixed(2), aoa_el_deg: +p.el.toFixed(2),
+      aod_az_deg: +p.aodAz.toFixed(2), aod_el_deg: +p.aodEl.toFixed(2), obstruction_loss_db: p.crossings.length ? +p.crossings.reduce((s, c) => s + (isFinite(c.lossDb) ? c.lossDb : 0), 0).toFixed(2) : 0,
+    }));
+  }
+  return rows;
+}
+function objectRows() {
+  const rows = [];
+  for (const o of world.rfObjects) rows.push({ id: o.id, kind: o.kind, material: o.mat.name, eps_r: o.mat.er, sigma_S_per_m: o.mat.sigma, mu_r: o.mat.mur, moisture_pct: o.mat.moisture, centre_x: +o.center[0].toFixed(2), centre_y: +o.center[1].toFixed(2), centre_z: +o.center[2].toFixed(2), triangles: o.nt, atten_dB_per_m: +RF.matProps(o.mat, S.f).dbPerM.toFixed(3) });
+  rows.push({ id: 'ground', kind: 'ground', material: world.groundMat.name, eps_r: world.groundMat.er, sigma_S_per_m: world.groundMat.sigma, mu_r: world.groundMat.mur, moisture_pct: world.groundMat.moisture });
+  for (const p of world.puddles) rows.push({ id: p.id, kind: 'puddle', material: p.mat.name, eps_r: p.mat.er, sigma_S_per_m: p.mat.sigma, mu_r: p.mat.mur, centre_x: +p.x.toFixed(2), centre_z: +p.z.toFixed(2) });
+  return rows;
+}
+function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+function toCSV(rows) { if (!rows.length) return ''; const k = Object.keys(rows[0]); return [k.join(','), ...rows.map(r => k.map(c => { const v = r[c] === undefined ? '' : String(r[c]); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','))].join('\n'); }
+$('exportCsv').onclick = () => download('drone_doa_measurements.csv', new Blob([toCSV(logRows.length ? logRows : [{ note: 'press Play to record measurements' }])], { type: 'text/csv' }));
+$('exportXlsx').onclick = () => {
+  if (!window.XLSX) { alert('The Excel library could not load (offline?). The CSV export will be used instead.'); $('exportCsv').click(); return; }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(logRows.length ? logRows : [{ note: 'press Play to record measurements' }]), 'Measurements');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pathRows()), 'Paths (current)');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(objectRows()), 'Scene materials');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Object.entries({ scenario: S.preset, layout: S.seed, frequency_GHz: S.f / 1e9, polarisation: S.pol, snr_mode: S.snrMode, reference_snr_dB: S.refSnr, tx_power_dBm: +RF.wToDbm(txPowerW()).toFixed(2), bandwidth_MHz: S.bwMHz, noise_figure_dB: S.nf, noise_floor_dBm: +RF.wToDbm(noiseW()).toFixed(2), samples_per_dwell: S.L, antennas_per_receiver: S.nAnt, ground: world.groundMat.name, ground_roughness_m: S.groundRough, mechanisms: Object.entries(S.en).filter(([, v]) => v).map(([k]) => k).join(' '), scattering_S: S.scatterS }).map(([k, v]) => ({ setting: k, value: v }))), 'Settings');
+  XLSX.writeFile(wb, 'drone_doa_measurements.xlsx');
+};
+
+// =================================================================================================
+// main loop
+// =================================================================================================
+const clock = new THREE.Clock();
+let animT = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.1);
+  animT += dt;
+  if (S.playing) { S.t += dt; simAccum += dt; }
+  // drone motion
+  drone.prevPos = drone.pos.slice();
+  const np = flightPos(S.t);
+  if (S.flight === 'hover') np[1] = S.alt;
+  drone.pos = np;
+  drone.group.position.set(np[0], np[1], np[2]);
+  const vx = np[0] - drone.prevPos[0], vz = np[2] - drone.prevPos[2];
+  if (Math.hypot(vx, vz) > 1e-4) drone.group.rotation.y = Math.atan2(vx, vz);
+  for (const p of drone.group.userData.props) p.rotation.y += dt * 60;
+  for (const it of world.interferers) if (it.type === 'drone2' && it.group) for (const p of it.group.userData.props) p.rotation.y += dt * 60;
+  droneShadowLine.geometry.setFromPoints([new THREE.Vector3(np[0], np[1], np[2]), new THREE.Vector3(np[0], 0.02, np[2])]); droneShadowLine.computeLineDistances();
+  droneMarker.position.set(np[0], 0.03, np[2]);
+  if (!S.playing && (Math.abs(drone.prevPos[0] - np[0]) + Math.abs(drone.prevPos[1] - np[1]) + Math.abs(drone.prevPos[2] - np[2]) > 1e-6)) { dirty = true; probeDirty = true; }
+
+  // RF measurement cycle
+  if (S.playing && simAccum >= S.cycle) { simAccum = 0; rfCycle(true); dirty = false; }
+  else if (dirty) { dirty = false; rfCycle(false); }
+  if (probeDirty) computeProbe();
+
+  // wavefronts
+  for (const w of waves) {
+    w.m.visible = S.wave;
+    if (!S.wave) continue;
+    const ph = ((animT / 3.2) + w.ph) % 1;
+    w.m.position.set(np[0], np[1], np[2]); w.m.scale.setScalar(0.5 + ph * 60); w.m.material.opacity = 0.07 * (1 - ph) * (1 - ph);
+  }
+  const on = world.interferers.filter(i => i.on);
+  while (intWaves.length < on.length) intWaves.push(makeWave('#a61e4d'));
+  intWaves.forEach((w, i) => { const it = on[i]; w.visible = !!it && S.wave; if (!it || !S.wave) return; const ph = ((animT / 3.2) + i * 0.37) % 1; w.position.set(it.pos[0], it.pos[1], it.pos[2]); w.scale.setScalar(0.5 + ph * 45); w.material.opacity = 0.06 * (1 - ph) * (1 - ph); });
+
+  if (S.particles) animateChains(packets, packetChains, animT, VIS_SPEED); else packets.geometry.setDrawRange(0, 0);
+  animateChains(probePackets, probeChains, animT, VIS_SPEED * 0.45);
+  stepFdtd();
+  if (camTween) {
+    camTween.t = Math.min(1, camTween.t + dt / 0.9);
+    const e = camTween.t < 0.5 ? 2 * camTween.t * camTween.t : 1 - Math.pow(-2 * camTween.t + 2, 2) / 2;
+    controls.target.lerpVectors(camTween.fT, camTween.tT, e);
+    camera.position.lerpVectors(camTween.fP, camTween.tP, e);
+    if (camTween.t >= 1) camTween = null;
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  if (S.labels) labelRenderer.render(scene, camera);
+}
+
+// =================================================================================================
+// boot
+// =================================================================================================
+applyPreset('mixed');
+setGroundMaterial(PRESETS.mixed.ground);
+for (let i = 0; i < 3; i++) addReceiver();
+renderIntList();
+resize();
+rfCycle(false);
+renderInspector();
+window.__sim = { S, world, RF, select, rfCycle, computeCoverage, zoomToSelection, get loc() { return loc; }, get fdtd() { return S.fdtd; } };
+animate();
+</script>
+</body>
+</html>

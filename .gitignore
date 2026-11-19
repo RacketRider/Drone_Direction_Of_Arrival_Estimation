@@ -1,0 +1,54 @@
+# Dependencies & Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Python Cache & Testing
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# LaTeX Auxiliary Files (Preserve main.pdf and figures)
+*.aux
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.bak
+*.lot
+*.lof
+
+# Temporary / Scratch Files from previous coursework
+*.vcd
+*.vvp
+*.o
+adders*
+full_adder.v
+half_adder.v
+tb_adders.v
+try.c
+try.o
+output/
+
+# OS and Editor Files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
